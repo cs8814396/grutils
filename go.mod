@@ -1,4 +1,4 @@
-module grutils
+module github.com/gdgrc/grutils
 
 replace (
 	cloud.google.com/go => github.com/google/go-cloud v0.4.1-0.20181112030950-0b43d4400e53
