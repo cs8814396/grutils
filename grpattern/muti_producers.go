@@ -10,7 +10,7 @@ import (
 type Product interface{}
 
 type ProducerParams interface {
-	Produce() (interface{}, error)
+	Produce() (Product, error)
 	//Done()
 }
 
@@ -31,7 +31,7 @@ func (wp *WorkPool) Invoke(pp ProducerParams) {
 func (wp *WorkPool) AddQueue(p Product) {
 	wp.Queue <- p
 
-	wp.Wg.Done()
+	//wp.Wg.Done()
 
 }
 
@@ -51,6 +51,8 @@ func NewWorkPool(producerNum int, cf func([]Product), bulkNum int) WorkPool {
 
 	var err error
 	wp.Pool, err = ants.NewPoolWithFunc(producerNum, func(i interface{}) {
+
+		defer wp.Wg.Done()
 
 		defer func() {
 			if r := recover(); r != nil {

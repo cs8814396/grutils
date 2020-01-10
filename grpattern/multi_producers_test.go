@@ -19,7 +19,7 @@ type MultiProducerParams struct {
 	//SouceData *[]map[string]string
 }
 
-func (mpp *MultiProducerParams) Produce() (interface{}, error) {
+func (mpp *MultiProducerParams) Produce() (Product, error) {
 
 	time.Sleep(time.Millisecond * 1)
 
@@ -27,7 +27,7 @@ func (mpp *MultiProducerParams) Produce() (interface{}, error) {
 
 }
 
-var endNum = 1000
+var endNum = 1100
 var m sync.Mutex
 
 var countNum = 0
@@ -152,7 +152,7 @@ func BenchmarkWorkPoolWith100(b *testing.B) {
 }
 func Test_WorkPool(t *testing.T) {
 
-	wp := NewWorkPool(11, Consume, 20)
+	wp := NewWorkPool(15, Consume, 20)
 
 	delta := 2
 
