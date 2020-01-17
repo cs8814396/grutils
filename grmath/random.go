@@ -4,7 +4,7 @@ import (
 	"crypto/rand"
 	"errors"
 	"fmt"
-	"grutils/grcommon"
+	"github.com/gdgrc/grutils/grcommon"
 
 	"os"
 	"strconv"
