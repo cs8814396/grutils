@@ -3,6 +3,10 @@ module github.com/gdgrc/grutils
 go 1.13
 
 require (
+	github.com/BurntSushi/toml v0.3.1
+	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
+	github.com/garyburd/redigo v1.6.0
+	github.com/go-sql-driver/mysql v1.5.0
 	github.com/miekg/dns v1.1.27
 	github.com/panjf2000/ants/v2 v2.3.0
 
