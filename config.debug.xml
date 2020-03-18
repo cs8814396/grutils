@@ -1,0 +1,71 @@
+<config>
+
+  <server>
+    <bindaddr>0.0.0.0:14488</bindaddr>
+    <host>xxxxxxasdasd</host>
+  </server>
+  <defaultconsulconfig>
+    <host>127.0.0.1</host>
+    <port>8500</port>
+  </defaultconsulconfig>
+
+  <aes>
+    <aeskey>xxxxxasdasdxx</aeskey>
+    <aesiv>axxxxxxx</aesiv>
+  </aes>
+  <rc4>
+    <rc4key>xxxxxasdasd</rc4key>
+  </rc4>
+
+  <defaultlog>
+    <level>1</level>
+    <logfile>/data/log/lottery_server/default.log</logfile>
+  </defaultlog>
+  <proxyadmin>
+     <admin_dsn>root:xxxx@(172.16.0.16:3306)/proxy?charset=utf8&amp;parseTime=true&amp;timeout=30s&amp;autocommit=true&amp;loc=Local</admin_dsn>
+     <maxidleconn>100</maxidleconn>
+  </proxyadmin>
+ <dataadmin>
+     <admin_dsn>root:xxxx@(172.16.0.16:3306)/lottery?charset=utf8&amp;parseTime=true&amp;timeout=30s&amp;autocommit=true&amp;loc=Local</admin_dsn>
+     <maxidleconn>100</maxidleconn>
+  </dataadmin>
+
+   <wechat>
+      <appid>xxxxxx</appid>
+
+      <appsecret>xxxxxxxxxxxxx</appsecret>
+      <mchn_id>xxxxxxxxx</mchn_id>
+      <key>xxxxxxxxxx</key>
+      <notify_url>xxxxxxxxxxxx/xxxxx/callback/wechatpay</notify_url>
+      <refund_notify_url>xxxxxxxxxxx/xxxx/callback/wechatrefund</refund_notify_url>
+      <ca_cert_path>/data/wechat/rootca.pem</ca_cert_path>
+      <client_cert_path>/data/wechat/apiclient_cert.pem</client_cert_path>
+      <client_key_path>/data/wechat/apiclient_key.pem</client_key_path>
+  </wechat>
+
+  <alertover>
+    <source>s-xxxxxxxxxxxxxx</source>
+    <receiver>xxxxxxxxxxxxx</receiver>
+   
+  </alertover>
+
+  <mixed_pay>
+     <merchant_no>xx</merchant_no>
+     <secret_key>xx</secret_key>
+     <notify_url></notify_url>
+  </mixed_pay>
+
+
+  <redispool>
+       <addr>127.0.0.1:6379</addr>
+       <db>7</db>
+       <pass></pass>
+       <connecttimeoutms>100</connecttimeoutms>
+       <readtimeoutms>100</readtimeoutms>
+       <writetimeoutms>100</writetimeoutms>
+       <idletimeoutms>1000</idletimeoutms>
+
+       <maxidle>10</maxidle>
+  </redispool>
+
+</config>

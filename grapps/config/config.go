@@ -19,7 +19,7 @@ const (
 )
 
 type XmlServer struct {
-	Bindaddr string `xml:"bindaddr"`
+	BindAddr string `xml:"bindaddr"`
 	Host     string `xml:"host"`
 	Debug    bool   `xml:"debug"`
 }

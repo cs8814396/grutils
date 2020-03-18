@@ -52,9 +52,9 @@ func (mlog *Logger) CreateLogger(filename string, logname string, ilevel int) bo
 
 }
 
-func (mlog *Logger) outPut(level int, preFix string, format string, v ...interface{}) error {
+func (mlog *Logger) OutPut(level int, callLayer int, preFix string, format string, v ...interface{}) error {
 
-	_, file, line, ok := runtime.Caller(2)
+	_, file, line, ok := runtime.Caller(callLayer)
 	if !ok {
 		panic("Logger Get FileLine err")
 	}
@@ -78,23 +78,22 @@ func (mlog *Logger) outPut(level int, preFix string, format string, v ...interfa
 }
 func (mlog *Logger) Fine(format string, v ...interface{}) error {
 
-	return mlog.outPut(1, "[Fine] ", format, v...)
+	return mlog.OutPut(1, 2, "[Fine] ", format, v...)
 }
 
 func (mlog *Logger) Debug(format string, v ...interface{}) error {
 
-	return mlog.outPut(2, "[Debug] ", format, v...)
+	return mlog.OutPut(2, 2, "[Debug] ", format, v...)
 }
 
 func (mlog *Logger) Info(format string, v ...interface{}) error {
-	return mlog.outPut(3, "[Info] ", format, v...)
+	return mlog.OutPut(3, 2, "[Info] ", format, v...)
 }
 func (mlog *Logger) Warn(format string, v ...interface{}) error {
-	return mlog.outPut(4, "[Warn] ", format, v...)
+	return mlog.OutPut(4, 2, "[Warn] ", format, v...)
 }
 
-func (mlog *Logger) Error(format string, v ...interface{}) (err error) {
-	err = mlog.outPut(5, "[Error] ", format, v...)
+func (mlog *Logger) AlertOver(alertMsg string) {
 	if mlog.alertOver.Source != "" && mlog.alertOver.Receiver != "" {
 		mlog.monitorLock.Lock()
 		defer mlog.monitorLock.Unlock()
@@ -102,11 +101,19 @@ func (mlog *Logger) Error(format string, v ...interface{}) (err error) {
 		deltaTime := nowTime.Sub(mlog.lastMonitorTime)
 		if deltaTime.Seconds() >= mlog.monitorSpace {
 
-			go grthird.AlertOverNotify(mlog.alertOver.Source, mlog.alertOver.Receiver, "ArmchairServer Error!", fmt.Sprintf(format, v...))
+			go grthird.AlertOverNotify(mlog.alertOver.Source, mlog.alertOver.Receiver, "ArmchairServer Error!", alertMsg)
 			mlog.lastMonitorTime = nowTime
 		}
 
 	}
+
+}
+
+func (mlog *Logger) Error(format string, v ...interface{}) (err error) {
+	err = mlog.OutPut(5, 2, "[Error] ", format, v...)
+
+	alertMsg := fmt.Sprintf(format, v...)
+	mlog.AlertOver(alertMsg)
 
 	return err
 
