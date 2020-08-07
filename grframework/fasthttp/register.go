@@ -42,7 +42,7 @@ func ResponseMap(c *fasthttp.RequestCtx, result *interface{}, isBeauty bool) {
 	}
 	rspBody := []byte(data)
 
-	config.DefaultLogger.Debug("rspBody: %s", rspBody)
+	config.DefaultLogger.Debug("req: %s, rspBody: %s", string(c.Request.Body()), rspBody)
 
 	c.Write(rspBody)
 
