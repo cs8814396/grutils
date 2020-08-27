@@ -61,7 +61,9 @@ func Register(funcPath string, h interface{}) {
 
 	handler := func(c *fasthttp.RequestCtx) {
 		reqT := t.In(1).Elem()
+		rspT := t.In(2).Elem()
 		reqV := reflect.New(reqT)
+		rspV := reflect.New(rspT)
 
 		var result interface{}
 
@@ -73,7 +75,7 @@ func Register(funcPath string, h interface{}) {
 
 		defer ResponseMap(c, &result, false)
 
-		ctx := &grframework.RequestContext{FasthttpCtx: c}
+		ctx := &grframework.Context{FasthttpCtx: c}
 
 		if c.IsGet() {
 
@@ -91,11 +93,13 @@ func Register(funcPath string, h interface{}) {
 			return
 		}
 
-		ret := v.Call([]reflect.Value{reflect.ValueOf(ctx), reqV})
-		e := ret[1].Interface().(*grframework.ResponseContext)
+		ret := v.Call([]reflect.Value{reflect.ValueOf(ctx), reqV, rspV})
+		e := ret[0].Interface().(error)
 		if e != nil {
-			defaultResult[grframework.RESULT] = e.Result
-			defaultResult[grframework.MSG] = e.Msg
+
+			grError := grframework.MakeError(e)
+			defaultResult[grframework.RESULT] = grError.Result
+			defaultResult[grframework.MSG] = grError.Msg
 			return
 		}
 		result = ret[0].Interface()
