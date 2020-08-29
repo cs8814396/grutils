@@ -1,4 +1,4 @@
-module data_fetcher
+module github.com/gdgrc/grutils/grserver/data_fetcher
 
 go 1.13
 

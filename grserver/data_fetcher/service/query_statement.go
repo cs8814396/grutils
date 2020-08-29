@@ -1,10 +1,10 @@
 package service
 
 import (
-	"data_fetcher/data_fetcherconf"
-	model "data_fetcher/data_fetchermodel"
 	"fmt"
 	"github.com/gdgrc/grutils/grapps/config/log"
+	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
+	model "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetchermodel"
 	"strings"
 	//"data_fetcher/pb/data_fetcher"
 )

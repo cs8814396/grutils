@@ -6,7 +6,7 @@ import (
 	"github.com/gdgrc/grutils/grapps/config"
 	"github.com/gdgrc/grutils/grframework/fasthttp"
 
-	econfig "data_fetcher/data_fetcherconf"
+	econfig "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
 
 	"os"
 	"path"

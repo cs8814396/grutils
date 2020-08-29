@@ -1,14 +1,14 @@
 package main
 
 import (
-	"data_fetcher/data_fetcherconf"
-	model "data_fetcher/data_fetchermodel"
-	"data_fetcher/service"
 	"database/sql"
 	"fmt"
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grdatabase"
 	"github.com/gdgrc/grutils/grframework"
+	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
+	model "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetchermodel"
+	"github.com/gdgrc/grutils/grserver/data_fetcher/service"
 	"math"
 	//"data_fetcher/pb/data_fetcher"
 )
