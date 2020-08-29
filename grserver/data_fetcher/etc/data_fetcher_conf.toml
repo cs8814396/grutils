@@ -1,0 +1,55 @@
+# querys define data package for each data_name
+# design for:
+# 1.default is security
+
+
+# usage:
+# normal: data fetch for simple statement query
+
+# profession: data fetch with user authentication which means diffenct role of user see different data
+
+
+
+[instances]
+[instances.test_instance]
+username="dev"
+password="uroad"
+ip="127.0.0.1"
+port=3306
+
+
+
+
+
+# ------------------query --------------------------------
+[querys.config_data_name]
+database_instance="test_instance"
+
+database_name="test_database"
+statement="""select * from test_table """
+
+[querys.test_data]
+
+database_instance="test_instance"
+
+database_name="test_database"
+
+statement="""select * from test_table where $test_condition1 and  $test_condition2 and  $test_condition2 and  $test_condition1 and  $test_condition2 and  $test_condition2 and  $test_condition1"""
+
+[querys.test_data.conditions.test_condition1]
+column_name="aa"
+permit_operators=["gte"]
+[querys.test_data.conditions.test_condition2]
+column_name="bb"
+permit_operators=["gte"]
+
+
+# -------------------insert ------------------------------
+[inserts.test_insert]
+
+
+database_instance="test_instance"
+
+database_name="test_database"
+
+statement="""insert into test_table (aa,bb) VALUES(?,?) ON DUPLICATE KEY UPDATE aa=VALUES(aa),bb=VALUES(bb)"""

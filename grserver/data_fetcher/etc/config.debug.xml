@@ -1,0 +1,23 @@
+<config>
+  <server>
+    <bindaddr>0.0.0.0:9096</bindaddr>
+  </server>
+  <defaultconsulconfig>
+    <host>127.0.0.1</host>
+    <port>8500</port>
+  </defaultconsulconfig>
+
+  <defaultlog>
+    <level>1</level>
+    <logfile>/data/log/data_fetcher/default.log</logfile>
+  </defaultlog>
+  <aes>
+    <aeskey>cf4d96a6755d4cc2</aeskey>
+    <aesiv>93d8c38g08caagga</aesiv>
+  </aes>
+  <rc4>
+    <rc4key>26689cf23f9923f74ca50aa9a75css11</rc4key>
+  </rc4>
+
+  
+</config>
