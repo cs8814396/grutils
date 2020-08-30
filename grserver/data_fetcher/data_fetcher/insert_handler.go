@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetchermodel"
+	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
 	//"data_fetcher/service"
 	//"database/sql"
 	"fmt"
@@ -19,7 +19,7 @@ func InsertData(c *grframework.Context, req *model.InsertDataReq, rsp *model.Ins
 
 	// page size should not be empty
 	if len(req.RecordList) == 0 {
-		err = fmt.Errorf("params error")
+		err = fmt.Errorf("params error, record_list is 0 length")
 		return
 	}
 

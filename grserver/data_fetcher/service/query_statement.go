@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetchermodel"
+	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
 	"strings"
 	//"data_fetcher/pb/data_fetcher"
 )
@@ -42,10 +42,13 @@ func ConstructMainStatment(req *model.FetchDataReq, dataConf *data_fetcherconf.Q
 		if !inputOk {
 			// condition is not input
 
-			if !condition.PermitEmpty {
+			if condition.Default == "" {
 				err = fmt.Errorf("inputName: %s should not be empty", inputName)
 				return
 			}
+
+			placeHolder := fmt.Sprintf("$%s", inputName)
+			placeHolderMap[placeHolder] = &model.PlaceHolder{ReplacedStatement: condition.Default, Params: []interface{}{}}
 
 		} else {
 			//condition is  input

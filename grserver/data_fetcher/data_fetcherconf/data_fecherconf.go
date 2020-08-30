@@ -33,7 +33,7 @@ type Query struct {
 type Condition struct {
 	ColumnName      string   `toml:"column_name"`
 	PermitOperators []string `toml:"permit_operators"`
-	PermitEmpty     bool     `toml:"permit_empty"`
+	Default         string   `toml:"default"`
 }
 
 var GlobalDataFetcherConf Conf

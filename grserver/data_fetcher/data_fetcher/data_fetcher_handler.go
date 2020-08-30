@@ -1,15 +1,18 @@
 package main
 
 import (
-	"database/sql"
+	//"database/sql"
 	"fmt"
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grdatabase"
 	"github.com/gdgrc/grutils/grframework"
 	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetchermodel"
+	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
 	"github.com/gdgrc/grutils/grserver/data_fetcher/service"
 	"math"
+	"reflect"
+	//"strings"
+	"encoding/json"
 	//"data_fetcher/pb/data_fetcher"
 )
 
@@ -37,19 +40,19 @@ func FetchData(c *grframework.Context, req *model.FetchDataReq, rsp *model.Fetch
 		return
 	}
 
-	err = ConstructAndSendDatabaseRequest(req, &dataConf, rsp)
+	err = SendDatabaseQueryRequest(req, &dataConf, rsp)
 	if err != nil {
-		log.Error("ConstructAndSendDatabaseRequest fail, msg: ", err)
+		log.Error("SendDatabaseQueryRequest fail, msg: ", err)
 
 		return
 	}
 
-	log.Debug(fmt.Sprintf("%+v, %+v", req, rsp))
+	log.Debug(fmt.Sprintf("FetchData req: %+v, rsp: %+v", req, rsp))
 
 	return
 }
 
-func ConstructAndSendDatabaseRequest(req *model.FetchDataReq, dataConf *data_fetcherconf.Query, rsp *model.FetchDataRsp) (err error) {
+func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetcherconf.Query, rsp *model.FetchDataRsp) (err error) {
 
 	instanceName := dataConf.DatabaseInstance
 	databaseName := dataConf.DatabaseName
@@ -111,11 +114,35 @@ func ConstructAndSendDatabaseRequest(req *model.FetchDataReq, dataConf *data_fet
 		return
 	}
 
-	rsp.RecordList = make([]map[string]string, 0)
-	values := make([]sql.NullString, len(columns))
-	scanArgs := make([]interface{}, len(values))
+	columnTypes, err := dataRows.ColumnTypes()
+	if err != nil {
+		return
+	}
 
-	for i := range values {
+	rl := make([]map[string]interface{}, 0)
+	values := make([]interface{}, len(columns), len(columns))
+	scanArgs := make([]interface{}, len(columns), len(columns))
+
+	for i := 0; i < len(scanArgs); i++ {
+		//var valueInterface interface{}
+		/*
+			dtn := strings.ToUpper(columnTypes[i].DatabaseTypeName())
+			if dtn == "JSON" {
+
+				//valueInterface = map[string]interface{}{}
+
+				scanArgs[i] = map[string]interface{}{}
+			} else if strings.Index(dtn, "INT") > -1 {
+				var t int64
+				valueInterface = t
+			} else if strings.Index(dtn, "CHAR") > -1 || strings.Index(dtn, "TIME") > -1 {
+				var t string
+				valueInterface = t
+			} else {
+				err = fmt.Errorf("UnRecognize DatabaseType: %s", dtn)
+				return
+			}*/
+
 		scanArgs[i] = &values[i]
 	}
 
@@ -129,20 +156,50 @@ func ConstructAndSendDatabaseRequest(req *model.FetchDataReq, dataConf *data_fet
 			return
 		}
 
-		data := make(map[string]string)
+		data := make(map[string]interface{})
 		for i, v := range values {
-			if v.Valid {
-				data[columns[i]] = v.String
-			} else {
-				data[columns[i]] = ""
+			/*
+				if v.Valid {
+					data[columns[i]] = v.String()
+				} else {
+					data[columns[i]] = ""
+				}*/
+			vType := reflect.TypeOf(v).String()
+			switch vType {
+
+			case "[]uint8":
+
+				if columnTypes[i].DatabaseTypeName() == "JSON" {
+					tmpValue := make(map[string]interface{})
+					err = json.Unmarshal([]byte(v.([]uint8)), &tmpValue)
+					if err != nil {
+						return
+					}
+					data[columns[i]] = tmpValue
+				} else {
+					//tmpValue := string(v.([]uint8))
+					data[columns[i]] = string(v.([]uint8))
+				}
+			case "int64":
+				data[columns[i]] = v
+			default:
+				err = fmt.Errorf("unrecognize type: %s", vType)
+				return
 			}
+			//data[columns[i]] = v
+
+			//log.Debug("column: %s type: %s, data: %s,columnScanType: %s, columnTypeName: %s,DatabaseTypeName: %s", columns[i], reflect.TypeOf(v).String(), data[columns[i]], columnTypes[i].ScanType(), columnTypes[i].Name(), columnTypes[i].DatabaseTypeName())
+
 		}
 
-		rsp.RecordList = append(rsp.RecordList, data)
+		rl = append(rl, data)
 
 	}
-	rsp.RecordNum = len(rsp.RecordList)
+
+	log.Debug("rl: ", rl)
+	rsp.RecordNum = len(rl)
 	rsp.PageNo = req.PageNo
+	rsp.RecordList = rl
 
 	return
 

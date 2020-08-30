@@ -8,7 +8,9 @@ require (
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/envoyproxy/protoc-gen-validate v0.3.0 // indirect
 	github.com/garyburd/redigo v1.6.0
+	github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20200829134842-c4bed968fc2e // indirect
 	github.com/go-sql-driver/mysql v1.5.0
+	github.com/gogo/protobuf v1.3.1 // indirect
 	github.com/golang/protobuf v1.3.5 // indirect
 	github.com/miekg/dns v1.1.27
 	github.com/panjf2000/ants/v2 v2.3.0

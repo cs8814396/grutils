@@ -2,7 +2,7 @@ package main
 
 import (
 	"github.com/gdgrc/grutils/grframework"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetchermodel"
+	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
 	"testing"
 )
 

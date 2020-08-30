@@ -1,4 +1,4 @@
-package data_fetchermodel
+package model
 
 type InsertDataReq struct {
 	DataName   string          `json:"data_name"`

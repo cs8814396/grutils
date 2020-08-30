@@ -34,7 +34,7 @@ database_instance="test_instance"
 
 database_name="test_database"
 
-statement="""select * from test_table where $test_condition1 and  $test_condition2 and  $test_condition2 and  $test_condition1 and  $test_condition2 and  $test_condition2 and  $test_condition1"""
+statement="""select * from test_table where $test_condition1 and  $test_condition2 and  $test_condition2 and  $test_condition1 and  $test_condition2 and  $test_condition2 and  $test_condition3"""
 
 [querys.test_data.conditions.test_condition1]
 column_name="aa"
@@ -42,7 +42,9 @@ permit_operators=["gte"]
 [querys.test_data.conditions.test_condition2]
 column_name="bb"
 permit_operators=["gte"]
-
+[querys.test_data.conditions.test_condition3]
+column_name="bb"
+permit_empty=true
 
 # -------------------insert ------------------------------
 [inserts.test_insert]

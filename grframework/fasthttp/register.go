@@ -42,11 +42,12 @@ func ResponseMap(c *fasthttp.RequestCtx, result *interface{}, isBeauty bool) {
 	}
 	rspBody := []byte(data)
 
-	config.DefaultLogger.Debug("req: %s, rspBody: %s", string(c.Request.Body()), rspBody)
+	config.DefaultLogger.Debug("req: %s, ===================================== rspBody: %s", string(c.Request.Body()), string(rspBody))
 
 	c.Write(rspBody)
 
 }
+
 func Register(funcPath string, h interface{}) {
 	fhrInit.Do(func() {
 		fhr = fasthttprouter.New()
@@ -80,11 +81,11 @@ func Register(funcPath string, h interface{}) {
 
 		var result interface{}
 
-		defaultResult := map[string]interface{}{}
+		defaultResult := &grframework.FrameworkResponse{}
 
 		result = defaultResult
-		defaultResult[grframework.RESULT] = 0
-		defaultResult[grframework.MSG] = ""
+		defaultResult.ErrCode = 0
+		defaultResult.ErrMsg = ""
 
 		defer ResponseMap(c, &result, false)
 
@@ -92,8 +93,8 @@ func Register(funcPath string, h interface{}) {
 
 		if c.IsGet() {
 
-			defaultResult[grframework.RESULT] = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
-			defaultResult[grframework.MSG] = "should not be get method"
+			defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
+			defaultResult.ErrMsg = "should not be get method"
 			return
 
 		}
@@ -101,8 +102,8 @@ func Register(funcPath string, h interface{}) {
 		err := json.Unmarshal(c.PostBody(), reqV.Interface()) //c.PostBody()
 		if err != nil {
 
-			defaultResult[grframework.RESULT] = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
-			defaultResult[grframework.MSG] = fmt.Sprintf("body umarshal fail. body: %s", c.PostBody())
+			defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
+			defaultResult.ErrMsg = fmt.Sprintf("body umarshal fail. body: %s", c.PostBody())
 			return
 		}
 
@@ -112,11 +113,14 @@ func Register(funcPath string, h interface{}) {
 		if !e.IsNil() {
 			tmpErr := e.Interface().(error)
 			grError := grframework.MakeError(tmpErr)
-			defaultResult[grframework.RESULT] = grError.Result
-			defaultResult[grframework.MSG] = grError.Msg
+			defaultResult.ErrCode = grError.ErrCode
+			defaultResult.ErrMsg = grError.ErrMsg
 			return
 		}
-		result = rspV.Interface() //ret[0].Interface()
+
+		defaultResult.Data = rspV.Interface()
+		config.DefaultLogger.Debug("rspV.Interface(): ", rspV.Interface())
+		//result = rspV.Interface() //ret[0].Interface()
 
 		c.Response.Header.Add("Content-Type", "application/json")
 		//ResponseMap(c, result, false)

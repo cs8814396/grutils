@@ -2,6 +2,8 @@ package grframework
 
 import (
 	"errors"
+	"fmt"
+
 	"github.com/valyala/fasthttp"
 )
 
@@ -12,7 +14,7 @@ type RequestContext struct {
 
 type ResponseContext struct {
 	Headers map[string]string
-	Result  int
+	Errcode  int
 	Msg     string
 }*/
 
@@ -22,15 +24,15 @@ type Context struct {
 }
 
 /*
-func MakeResultWithMsg(result int, msg string) (rc *ResponseContext) {
-	rc = &ResponseContext{Result: result, Msg: msg}
+func MakeErrcodeWithMsg(result int, msg string) (rc *ResponseContext) {
+	rc = &ResponseContext{Errcode: result, Msg: msg}
 	return
 }
 */
 // Error .
 type Error struct {
-	Result int    `json:"result"` // 错误码  五位数字
-	Msg    string `json:"msg"`    // 错误信息
+	ErrCode int    `json:"errcode"` // 错误码  五位数字
+	ErrMsg  string `json:"errmsg"`  // 错误信息
 
 	ServiceID string `json:"serviceid,omitempty"` // 服务ID
 	TracerID  string `json:"tracerid,omitempty"`  // tracerID
@@ -39,15 +41,15 @@ type Error struct {
 
 func (e Error) Error() string {
 
-	return e.Msg //+ " (cause: " + e.Cause + ")"
+	return fmt.Sprintf("%s(%d)", e.ErrMsg, e.ErrCode) //+ " (cause: " + e.Cause + ")"
 }
 
 // New new error
 func NewError(result int, msg string) *Error {
 
 	return &Error{
-		Result: result,
-		Msg:    msg,
+		ErrCode: result,
+		ErrMsg:  msg,
 	}
 }
 
