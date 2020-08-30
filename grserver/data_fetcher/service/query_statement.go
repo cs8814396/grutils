@@ -48,6 +48,13 @@ func ConstructMainStatment(req *model.FetchDataReq, dataConf *data_fetcherconf.Q
 			}
 
 			placeHolder := fmt.Sprintf("$%s", inputName)
+			placeHolderLength := len(placeHolder)
+			if placeHolderLength > maxPlaceHolderLength {
+				maxPlaceHolderLength = placeHolderLength
+			}
+			if placeHolderLength < minPlaceHolderLength {
+				minPlaceHolderLength = placeHolderLength
+			}
 			placeHolderMap[placeHolder] = &model.PlaceHolder{ReplacedStatement: condition.Default, Params: []interface{}{}}
 
 		} else {
@@ -120,7 +127,7 @@ func ConstructMainStatment(req *model.FetchDataReq, dataConf *data_fetcherconf.Q
 	sIndexJ := sIndexI + minPlaceHolderLength
 	smLength := len(s.PreparedStatement)
 	tmpSm := s.PreparedStatement
-	log.Debug("smLength: ", smLength)
+	log.Debug("smLength: %d", smLength)
 
 	for sIndexI < smLength && sIndexJ <= smLength {
 		suspectString := s.PreparedStatement[sIndexI:sIndexJ]
@@ -134,8 +141,12 @@ func ConstructMainStatment(req *model.FetchDataReq, dataConf *data_fetcherconf.Q
 			s.Params = append(s.Params, ph.Params...)
 		} else {
 			//match fail and pass.
-			sIndexI = sIndexI + 1
-			sIndexJ = sIndexI + minPlaceHolderLength
+			sIndexJ = sIndexJ + 1
+			if sIndexJ-sIndexI > maxPlaceHolderLength || sIndexJ > smLength {
+				sIndexI = sIndexI + 1
+				sIndexJ = sIndexI + minPlaceHolderLength
+			}
+
 		}
 
 	}

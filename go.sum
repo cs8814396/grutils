@@ -17,8 +17,11 @@ github.com/envoyproxy/protoc-gen-validate v0.3.0/go.mod h1:iSmxcyjqTsJpI2R4NaDN7
 github.com/garyburd/redigo v1.6.0 h1:0VruCpn7yAIIu7pWVClQC8wxCJEcG3nyzpMSHKi1PQc=
 github.com/garyburd/redigo v1.6.0/go.mod h1:NR3MbYisc3/PwhQ00EMzDiPmrwpPxAn5GI05/YaO1SY=
 github.com/gdgrc/grutils v0.0.0-20200313101304-0a34ba766f40/go.mod h1:BSafXzX9HbgIXxJpbJWM5u5hZqDcIZmRyUicCytBQgc=
+github.com/gdgrc/grutils v0.0.0-20200829134842-c4bed968fc2e/go.mod h1:dmJ2KTlsP/rennV1bKEE3b1xqwNewxB0wW+G3LNH7SM=
 github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20200829134842-c4bed968fc2e h1:8snaUZkLbvsKv271U1jbdyiKKENTowTfTVf5zmAbiN0=
 github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20200829134842-c4bed968fc2e/go.mod h1:jaeQMFy9F/uJxz75j9EMEZ4v+U+Jn24o1iEP2DDGNok=
+github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20200830103623-76377616cb97 h1:xAVHh+ae4yJWvNqUI6CJCR+TmkSHBXdXb1yWLpTE3Pk=
+github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20200830103623-76377616cb97/go.mod h1:YHb7EkOMluZHgJAml2iJxtiY/cmrPMe2/wcfvNpV7/o=
 github.com/gin-contrib/sse v0.1.0/go.mod h1:RHrZQHXnP2xjPF+u1gW/2HnVO7nvIa9PG3Gm+fLHvGI=
 github.com/gin-gonic/gin v1.5.0/go.mod h1:Nd6IXA8m5kNZdNEHMBd93KT+mdY3+bewLgRvmCsR2Do=
 github.com/go-playground/locales v0.12.1/go.mod h1:IUMDtCfWo/w/mtMfIE/IG2K+Ey3ygWanZIBtBW0W2TM=

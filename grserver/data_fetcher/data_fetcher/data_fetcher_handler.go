@@ -77,6 +77,8 @@ func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetchercon
 		return
 	}
 
+	log.Debug("conf: %+v,mainStatement.GetRecordPreparedStatement(): %s, mainStatement.GetParams(): %+v", dataConf, mainStatement.GetRecordPreparedStatement(), mainStatement.GetParams())
+
 	countRows, err := databaseConn.Query(mainStatement.GetCountPreparedStatement(), mainStatement.GetParams()...)
 	if err != nil {
 		return
@@ -100,7 +102,6 @@ func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetchercon
 	rsp.PageSize = req.PageSize
 	rsp.PageNo = req.PageNo
 	rsp.TotalPageNum = int(math.Ceil(float64(rsp.TotalRecordNum) / float64(rsp.PageSize)))
-
 	dataRows, err := databaseConn.Query(mainStatement.GetRecordPreparedStatement(), mainStatement.GetParams()...)
 	if err != nil {
 		return
@@ -196,7 +197,6 @@ func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetchercon
 
 	}
 
-	log.Debug("rl: ", rl)
 	rsp.RecordNum = len(rl)
 	rsp.PageNo = req.PageNo
 	rsp.RecordList = rl
