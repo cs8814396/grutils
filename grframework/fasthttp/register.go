@@ -9,6 +9,8 @@ import (
 	"github.com/gdgrc/grutils/grframework"
 	"github.com/valyala/fasthttp"
 	"reflect"
+	"runtime/debug"
+
 	"sync"
 )
 
@@ -16,15 +18,22 @@ import (
 var fhrInit sync.Once
 var fhr *fasthttprouter.Router
 
-func ResponseMap(c *fasthttp.RequestCtx, result *interface{}, isBeauty bool) {
+func ResponseMap(c *grframework.Context, result *interface{}, isBeauty bool) {
 	var data []byte
 	var err error
+	data = c.GetRawResponse()
+	if data != nil {
+		c.FasthttpCtx.Write(data)
+		config.DefaultLogger.Debug("req: %s, ===================================== rawRsp: %s", string(c.FasthttpCtx.Request.Body()), string(data))
+		return
+	}
+
 	if isBeauty {
 		data, err = json.MarshalIndent(*result, "", "      ")
 		if err != nil {
 			msg := fmt.Sprintf(`{"result":0, "msg":"last decode err"}`)
 			//c.String(http.StatusOK, msg)
-			c.Write([]byte(msg))
+			c.FasthttpCtx.Write([]byte(msg))
 			config.DefaultLogger.Error(msg + err.Error())
 			return
 		}
@@ -34,7 +43,7 @@ func ResponseMap(c *fasthttp.RequestCtx, result *interface{}, isBeauty bool) {
 		if err != nil {
 			msg := fmt.Sprintf(`{"result":0, "msg":"last decode err"}`)
 			//c.String(http.StatusOK, msg)
-			c.Write([]byte(msg))
+			c.FasthttpCtx.Write([]byte(msg))
 			config.DefaultLogger.Error(msg + err.Error())
 			return
 		}
@@ -42,9 +51,13 @@ func ResponseMap(c *fasthttp.RequestCtx, result *interface{}, isBeauty bool) {
 	}
 	rspBody := []byte(data)
 
-	config.DefaultLogger.Debug("req: %s, ===================================== rspBody: %s", string(c.Request.Body()), string(rspBody))
+	config.DefaultLogger.Debug("req: %s, ===================================== rspBody: %s", string(c.FasthttpCtx.Request.Body()), string(rspBody))
 
-	c.Write(rspBody)
+	c.FasthttpCtx.Write(rspBody)
+
+}
+
+func NewGroup() {
 
 }
 
@@ -74,6 +87,7 @@ func Register(funcPath string, h interface{}) {
 	}*/
 
 	handler := func(c *fasthttp.RequestCtx) {
+
 		reqT := t.In(1).Elem()
 		rspT := t.In(2).Elem()
 		reqV := reflect.New(reqT)
@@ -87,9 +101,20 @@ func Register(funcPath string, h interface{}) {
 		defaultResult.ErrCode = 0
 		defaultResult.ErrMsg = ""
 
-		defer ResponseMap(c, &result, false)
-
 		ctx := &grframework.Context{FasthttpCtx: c}
+		//ctx.SetRawResponse(nil)
+
+		defer func() {
+			if err := recover(); err != nil {
+				config.DefaultLogger.Error("ProcePanic：", err, "\nfull stack: ", string(debug.Stack()))
+				//commRsp.ErrMsg = CreateEnginErrWithHint(KProcessPanic, genSessionID())
+				//responeRetCodeByHeader(c, commRsp.ErrMsg.ErrCode)
+				//ginrender.Response(c, &commRsp)
+				//collector.ReportLocalCall(commRsp.ErrMsg.ErrCode, modelName, funcPath)
+			}
+		}()
+
+		defer ResponseMap(ctx, &result, false)
 
 		if c.IsGet() {
 

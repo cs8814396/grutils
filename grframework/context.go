@@ -1,9 +1,9 @@
 package grframework
 
 import (
+	"context"
 	"errors"
 	"fmt"
-
 	"github.com/valyala/fasthttp"
 )
 
@@ -19,8 +19,27 @@ type ResponseContext struct {
 }*/
 
 type Context struct {
+	commCtx     context.Context
 	FasthttpCtx *fasthttp.RequestCtx
 	Headers     map[string]string
+	RawResponse bool
+}
+
+const (
+	CONTEXT_RAW_RESPONSE_KEY = "raw_response"
+)
+
+func (c *Context) SetRawResponse(b []byte) {
+	c.RawResponse = true
+	c.commCtx = context.WithValue(c.commCtx, CONTEXT_RAW_RESPONSE_KEY, b)
+}
+func (c *Context) GetRawResponse() (b []byte) {
+	if c.RawResponse {
+		return c.commCtx.Value(CONTEXT_RAW_RESPONSE_KEY).([]byte)
+
+	}
+
+	return nil
 }
 
 /*
