@@ -9,6 +9,8 @@ import (
 	"golang.org/x/text/transform"
 	"io/ioutil"
 	"sort"
+
+	"golang.org/x/text/encoding/charmap"
 )
 
 func GetStringMapMd5(resultMap map[string]string) (mapMd5 string, err error) {
@@ -84,6 +86,23 @@ func JsonMarshalWithoutEscape(t interface{}) ([]byte, error) {
 	encoder.SetEscapeHTML(false)
 	err := encoder.Encode(t)
 	return buffer.Bytes(), err
+}
+
+func ISO88598ToUtf8(s []byte) []byte {
+	e := charmap.ISO8859_8.NewDecoder()
+	es, _, err := transform.Bytes(e, s)
+	if err != nil {
+		return s
+	}
+	return es
+}
+
+func LatinToUTF8(iso8859_1_buf []byte) string {
+	buf := make([]rune, len(iso8859_1_buf))
+	for i, b := range iso8859_1_buf {
+		buf[i] = rune(b)
+	}
+	return string(buf)
 }
 func GBKToUTF8(s []byte) ([]byte, error) {
 	reader := transform.NewReader(bytes.NewReader(s), simplifiedchinese.GBK.NewDecoder())

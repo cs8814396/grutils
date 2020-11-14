@@ -18,9 +18,14 @@ type ResponseContext struct {
 	Msg     string
 }*/
 
+type RequestContext struct {
+	RequestBody string
+}
 type Context struct {
 	commCtx     context.Context
+	MainCtx     context.Context
 	FasthttpCtx *fasthttp.RequestCtx
+	RequestCtx  *RequestContext
 	Headers     map[string]string
 	RawResponse bool
 }
@@ -29,6 +34,15 @@ const (
 	CONTEXT_RAW_RESPONSE_KEY = "raw_response"
 )
 
+func (c *Context) SetData(key interface{}, data interface{}) {
+	//c.RawResponse = true
+	c.commCtx = context.WithValue(c.commCtx, key, data)
+}
+func (c *Context) GetData(key interface{}) (data interface{}) {
+
+	return c.commCtx.Value(key)
+
+}
 func (c *Context) SetRawResponse(b []byte) {
 	c.RawResponse = true
 	c.commCtx = context.WithValue(c.commCtx, CONTEXT_RAW_RESPONSE_KEY, b)

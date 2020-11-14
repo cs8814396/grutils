@@ -61,7 +61,7 @@ func NewGroup() {
 
 }
 
-func Register(funcPath string, h interface{}) {
+func Register(funcPath string, h interface{}) { //TODO: h is can be umarshal
 	fhrInit.Do(func() {
 		fhr = fasthttprouter.New()
 	})
