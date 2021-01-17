@@ -7,7 +7,13 @@ type Instance struct {
 	Port     int    `toml:"port"`
 }
 
+type Auth struct {
+	ClientId     string `toml:"client_id"`
+	ClientSecret string `toml:"client_secret"`
+}
+
 type Conf struct {
+	Auth Auth `toml:"auth"`
 	//TODO: define you config here
 	Instances map[string]Instance `toml:"instances"`
 	Querys    map[string]Query    `toml:"querys"`

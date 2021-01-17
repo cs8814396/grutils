@@ -61,7 +61,7 @@ func NewGroup() {
 
 }
 
-func Register(funcPath string, h interface{}) { //TODO: h is can be umarshal
+func Register(funcPath string, h interface{}, middleware ...func(*grframework.Context) *grframework.Error) { //TODO: h is can be umarshal
 	fhrInit.Do(func() {
 		fhr = fasthttprouter.New()
 	})
@@ -115,6 +115,15 @@ func Register(funcPath string, h interface{}) { //TODO: h is can be umarshal
 		}()
 
 		defer ResponseMap(ctx, &result, false)
+
+		for _, m := range middleware {
+			grErr := m(ctx)
+			if grErr != nil {
+				defaultResult.ErrCode = grErr.ErrCode
+				defaultResult.ErrMsg = grErr.ErrMsg
+				return
+			}
+		}
 
 		if c.IsGet() {
 

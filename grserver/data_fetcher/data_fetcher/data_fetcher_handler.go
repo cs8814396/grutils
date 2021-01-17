@@ -13,6 +13,7 @@ import (
 	"reflect"
 	//"strings"
 	"encoding/json"
+	"time"
 	//"data_fetcher/pb/data_fetcher"
 )
 
@@ -183,6 +184,8 @@ func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetchercon
 				}
 			case "int64":
 				data[columns[i]] = v
+			case "time.Time":
+				data[columns[i]] = (v.(time.Time)).Format("2006-01-02 15:04:05")
 			default:
 				err = fmt.Errorf("unrecognize type: %s", vType)
 				return

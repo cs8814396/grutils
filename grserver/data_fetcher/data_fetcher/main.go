@@ -4,8 +4,8 @@ import (
 	"flag"
 	"fmt"
 	"github.com/gdgrc/grutils/grapps/config"
+	"github.com/gdgrc/grutils/grframework"
 	"github.com/gdgrc/grutils/grframework/fasthttp"
-
 	econfig "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
 
 	"os"
@@ -36,12 +36,18 @@ func initConfig(configFilePath string, specificConfigFilePath string) bool {
 	return econfig.Init(configFilePath, specificConfigFilePath) && config.Init(configFilePath)
 }
 
+func AuthMIddleware(c *grframework.Context) (err *grframework.Error) {
+	if econfig.GlobalDataFetcherConf.Auth.ClientId != "" {
+
+	}
+	return
+}
 func main() {
 	if !Init() {
 		time.Sleep(1e9)
 		return
 	}
-	fasthttp.Register("/fetch_data", FetchData)
-	fasthttp.Register("/insert_data", InsertData)
+	fasthttp.Register("/fetch_data", FetchData, AuthMIddleware)
+	fasthttp.Register("/insert_data", InsertData, AuthMIddleware)
 	fasthttp.ListenAndBlock(config.GlobalConf.Server.BindAddr)
 }
