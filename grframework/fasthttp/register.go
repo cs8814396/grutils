@@ -101,7 +101,8 @@ func Register(funcPath string, h interface{}, middleware ...func(*grframework.Co
 		defaultResult.ErrCode = 0
 		defaultResult.ErrMsg = ""
 
-		ctx := &grframework.Context{FasthttpCtx: c}
+		ctx := &grframework.Context{FasthttpCtx: c, Headers: make(map[string]string)}
+
 		//ctx.SetRawResponse(nil)
 
 		defer func() {
@@ -115,6 +116,11 @@ func Register(funcPath string, h interface{}, middleware ...func(*grframework.Co
 		}()
 
 		defer ResponseMap(ctx, &result, false)
+
+		f := func(key []byte, value []byte) {
+			ctx.Headers[string(key)] = string(value)
+		}
+		ctx.FasthttpCtx.Request.Header.VisitAll(f)
 
 		for _, m := range middleware {
 			grErr := m(ctx)

@@ -87,6 +87,21 @@ func ConstructMainStatment(req *model.FetchDataReq, dataConf *data_fetcherconf.Q
 							partStatement = partStatement[:len(partStatement)-1]
 							partStatement += ") "
 
+						} else if innerStatement == "like" {
+
+							partStatement += "? "
+							tmpParams = append(tmpParams, fmt.Sprintf("%%%s%%", ruleValueList[0]))
+
+						} else if innerStatement == "llike" {
+
+							partStatement += "? "
+							tmpParams = append(tmpParams, fmt.Sprintf("%%%s", ruleValueList[0]))
+
+						} else if innerStatement == "rlike" {
+
+							partStatement += "? "
+							tmpParams = append(tmpParams, fmt.Sprintf("%s%%", ruleValueList[0]))
+
 						} else {
 							// if not in statement, just fetch the first value
 

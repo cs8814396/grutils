@@ -30,13 +30,13 @@ func (m *FetchDataReq) String() string {
 func (*FetchDataReq) ProtoMessage() {}
 
 type FetchDataClientRsp struct {
-	TotalPageNum   int `protobuf:"varint,1,opt,name=total_page_num,proto3" json:"total_page_num,omitempty"`
-	RecordNum      int `protobuf:"varint,2,opt,name=record_num,proto3" json:"record_num,omitempty"`
-	TotalRecordNum int `protobuf:"varint,3,opt,name=total_record_num,proto3" json:"total_record_num,omitempty"`
-	PageSize       int `protobuf:"varint,4,opt,name=page_size,proto3" json:"page_size,omitempty"`
-	PageNo         int `protobuf:"varint,5,opt,name=page_no,proto3" json:"page_no,omitempty"`
+	TotalPageNum   int `protobuf:"varint,1,opt,name=total_page_num,proto3" json:"total_page_num"`
+	RecordNum      int `protobuf:"varint,2,opt,name=record_num,proto3" json:"record_num"`
+	TotalRecordNum int `protobuf:"varint,3,opt,name=total_record_num,proto3" json:"total_record_num"`
+	PageSize       int `protobuf:"varint,4,opt,name=page_size,proto3" json:"page_size"`
+	PageNo         int `protobuf:"varint,5,opt,name=page_no,proto3" json:"page_no"`
 
-	RecordList interface{} `protobuf:"bytes,6,opt,name=record_list,proto3" json:"record_list,omitempty"` //[]map[string]string
+	RecordList interface{} `protobuf:"bytes,6,opt,name=record_list,proto3" json:"record_list"` //[]map[string]string
 }
 type FetchDataRsp struct {
 	TotalPageNum   int `protobuf:"varint,1,opt,name=total_page_num,proto3" json:"total_page_num,omitempty"`
@@ -58,9 +58,12 @@ func (m *FetchDataRsp) String() string {
 func (*FetchDataRsp) ProtoMessage() {}
 
 var RuleTable = map[string]string{
-	"gte": ">=",
-	"lte": "<=",
-	"lt":  "<",
-	"eq":  "=",
-	"in":  "in",
+	"gte":   ">=",
+	"lte":   "<=",
+	"lt":    "<",
+	"eq":    "=",
+	"in":    "in",
+	"like":  "like",
+	"llike": "like",
+	"rlike": "like",
 }

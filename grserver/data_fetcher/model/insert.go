@@ -7,4 +7,5 @@ type InsertDataReq struct {
 }
 
 type InsertDataRsp struct {
+	IdList []int64 `json:"id_list"`
 }

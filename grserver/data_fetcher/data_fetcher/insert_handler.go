@@ -1,11 +1,15 @@
 package main
 
 import (
+	"database/sql"
+
 	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
 	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
+
 	//"data_fetcher/service"
 	//"database/sql"
 	"fmt"
+
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grdatabase"
 	"github.com/gdgrc/grutils/grframework"
@@ -78,12 +82,20 @@ func SendDatabaseInsertRequest(req *model.InsertDataReq, dataConf *data_fetcherc
 	defer prepareStatement.Close()
 
 	for _, data := range req.RecordList {
-		_, err = prepareStatement.Exec(data...)
+		var result sql.Result
+		result, err = prepareStatement.Exec(data...)
 		if err != nil {
 			log.Error("data exec fail: %+v", data)
 			return
 
 		}
+		var lastId int64
+		lastId, err = result.LastInsertId()
+		if err != nil {
+			log.Error("data exec LastInsertId: %s", err)
+			return
+		}
+		rsp.IdList = append(rsp.IdList, lastId)
 
 	}
 	conn.Commit()
