@@ -61,8 +61,21 @@ func ConstructMainStatment(reqCondition map[string]map[string][]string, statemen
 		} else {
 			//condition is  input
 			for ruleName, ruleValueList := range rule {
+
+				permit := false
+				for _, operator := range condition.PermitOperators {
+					if ruleName == operator {
+						permit = true
+					}
+				}
+				if !permit {
+					err = fmt.Errorf("operator: %s is not permit. permission: %s", ruleName, condition.PermitOperators)
+					return
+				}
+
 				innerStatement, ruleOk := model.RuleTable[ruleName]
 				if ruleOk {
+
 					partStatement := ""
 					partStatement += fmt.Sprintf("%s %s ", condition.ColumnName, innerStatement)
 					valueListLength := len(ruleValueList)
