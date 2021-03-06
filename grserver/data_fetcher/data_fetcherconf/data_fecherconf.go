@@ -18,6 +18,15 @@ type Conf struct {
 	Instances map[string]Instance `toml:"instances"`
 	Querys    map[string]Query    `toml:"querys"`
 	Inserts   map[string]Insert   `toml:"inserts"`
+	Updates   map[string]Update   `toml:"updates"`
+}
+type Update struct {
+	DatabaseInstance string               `toml:"database_instance"`
+	DatabaseName     string               `toml:"database_name"`
+	Statement        string               `toml:"statement"`
+	Conditions       map[string]Condition `toml:"conditions"`
+	//Delay  bool `toml:"delay"`
+	//Upsert bool `toml:"upsert"`
 }
 
 type Insert struct {

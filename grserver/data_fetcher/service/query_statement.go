@@ -2,42 +2,43 @@ package service
 
 import (
 	"fmt"
+	"strings"
+
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
 	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
-	"strings"
 	//"data_fetcher/pb/data_fetcher"
 )
 
 type Statement struct {
-	Params            []interface{}
-	Request           *model.FetchDataReq
+	Params []interface{}
+	//Request           *model.FetchDataReq
 	PreparedStatement string
 }
 
 func (this *Statement) GetParams() []interface{} {
 	return this.Params
 }
-func (this *Statement) GetRecordPreparedStatement() string {
-	return fmt.Sprintf("%s limit %d,%d", this.PreparedStatement, (this.Request.PageNo-1)*this.Request.PageSize, this.Request.PageSize)
+func (this *Statement) GetRecordPreparedStatement(pageNo int, pageSize int) string {
+	return fmt.Sprintf("%s limit %d,%d", this.PreparedStatement, (pageNo-1)*pageSize, pageSize)
 }
 func (this *Statement) GetCountPreparedStatement() string {
 	return fmt.Sprintf("select count(*) as count  from ( %s ) as a", this.PreparedStatement)
 }
-func ConstructMainStatment(req *model.FetchDataReq, dataConf *data_fetcherconf.Query) (s *Statement, err error) {
+func ConstructMainStatment(reqCondition map[string]map[string][]string, statement string, confCondition map[string]data_fetcherconf.Condition) (s *Statement, err error) {
 	s = &Statement{}
-	s.Request = req
+	//s.Request = req
 
 	//params = make([]interface{}, 0, len(dataConf.Conditions))
-	s.PreparedStatement = dataConf.Statement
+	s.PreparedStatement = statement // dataConf.Statement
 	placeHolderMap := make(map[string]*model.PlaceHolder)
 	maxPlaceHolderLength := 0
 	minPlaceHolderLength := int(^uint(0) >> 1)
 
 	//---------construct placeholder map-----------
-	for inputName, condition := range dataConf.Conditions {
+	for inputName, condition := range confCondition { //dataConf.Conditions {
 		//-----------find out if condition is input
-		rule, inputOk := req.Condition[inputName]
+		rule, inputOk := reqCondition[inputName]
 
 		if !inputOk {
 			// condition is not input

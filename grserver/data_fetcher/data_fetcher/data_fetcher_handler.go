@@ -3,14 +3,16 @@ package main
 import (
 	//"database/sql"
 	"fmt"
+	"math"
+	"reflect"
+
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grdatabase"
 	"github.com/gdgrc/grutils/grframework"
 	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
 	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
 	"github.com/gdgrc/grutils/grserver/data_fetcher/service"
-	"math"
-	"reflect"
+
 	//"strings"
 	"encoding/json"
 	"time"
@@ -72,13 +74,13 @@ func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetchercon
 		log.Error("DBGetConn return err: ", err)
 		return
 	}
-	mainStatement, err := service.ConstructMainStatment(req, dataConf)
+	mainStatement, err := service.ConstructMainStatment(req.Condition, dataConf.Statement, dataConf.Conditions)
 	if err != nil {
 		log.Error("ConstructMainStatment return err: ", err)
 		return
 	}
 
-	log.Debug("conf: %+v,mainStatement.GetRecordPreparedStatement(): %s, mainStatement.GetParams(): %+v", dataConf, mainStatement.GetRecordPreparedStatement(), mainStatement.GetParams())
+	log.Debug("conf: %+v,mainStatement.GetRecordPreparedStatement(): %s, mainStatement.GetParams(): %+v", dataConf, mainStatement.GetRecordPreparedStatement(req.PageNo, req.PageSize), mainStatement.GetParams())
 
 	countRows, err := databaseConn.Query(mainStatement.GetCountPreparedStatement(), mainStatement.GetParams()...)
 	if err != nil {
@@ -103,7 +105,7 @@ func SendDatabaseQueryRequest(req *model.FetchDataReq, dataConf *data_fetchercon
 	rsp.PageSize = req.PageSize
 	rsp.PageNo = req.PageNo
 	rsp.TotalPageNum = int(math.Ceil(float64(rsp.TotalRecordNum) / float64(rsp.PageSize)))
-	dataRows, err := databaseConn.Query(mainStatement.GetRecordPreparedStatement(), mainStatement.GetParams()...)
+	dataRows, err := databaseConn.Query(mainStatement.GetRecordPreparedStatement(req.PageNo, req.PageSize), mainStatement.GetParams()...)
 	if err != nil {
 		return
 	}

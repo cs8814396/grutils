@@ -43,7 +43,7 @@ func AuthMiddleware(c *grframework.Context) (err *grframework.Error) {
 	if econfig.GlobalDataFetcherConf.Auth.ClientId != "" {
 
 		auth := c.Headers["Authorization"]
-		target := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(econfig.GlobalDataFetcherConf.Auth.ClientId+":"+ econfig.GlobalDataFetcherConf.Auth.ClientSecret)))
+		target := fmt.Sprintf("Basic %s", base64.StdEncoding.EncodeToString([]byte(econfig.GlobalDataFetcherConf.Auth.ClientId+":"+econfig.GlobalDataFetcherConf.Auth.ClientSecret)))
 		log.Debug("headers: ", c.Headers, "auth: ", auth, " target: ", target)
 
 		if auth != target {
@@ -60,5 +60,6 @@ func main() {
 	}
 	fasthttp.Register("/fetch_data", FetchData, AuthMiddleware)
 	fasthttp.Register("/insert_data", InsertData, AuthMiddleware)
+	fasthttp.Register("/update_data", UpdateData, AuthMiddleware)
 	fasthttp.ListenAndBlock(config.GlobalConf.Server.BindAddr)
 }
