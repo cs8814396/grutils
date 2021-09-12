@@ -1,0 +1,227 @@
+CREATE DATABASE lottery charset=utf8mb4;
+use lottery;
+CREATE TABLE IF NOT EXISTS `channel` (
+   `appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+   `chn_id` bigint NOT NULL COMMENT 'channel id',
+   `create_time` DATETIME NOT NULL COMMENT '创建时间',
+   `status` INT NOT NULL COMMENT '1:有效',
+   `extra_info` JSON NOT NULL,
+   PRIMARY KEY (`appid`,`chn_id`)
+ ) ENGINE=Innodb DEFAULT CHARSET=utf8mb4 COMMENT 'channel list';
+
+
+CREATE TABLE IF NOT EXISTS `version` (
+   `appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+   `version_id` int NOT NULL COMMENT 'version id',
+   `create_time` DATETIME NOT NULL COMMENT '创建时间',
+   `status` INT NOT NULL COMMENT '1:有效',
+   `extra_info` JSON NOT NULL,
+   PRIMARY KEY (`appid`,`version_id`)
+ ) ENGINE=Innodb DEFAULT CHARSET=utf8mb4 COMMENT '版本控制表';
+
+
+
+CREATE TABLE IF NOT EXISTS `application` (
+   `appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+   `appkey` VARCHAR(256) NOT NULL COMMENT '应用秘钥',
+   `create_time` DATETIME NOT NULL COMMENT '创建时间',
+   `status` INT NOT NULL COMMENT '1:有效',
+   `extra_info` JSON NOT NULL,
+   PRIMARY KEY (`appid`)
+ ) ENGINE=Innodb DEFAULT CHARSET=utf8mb4 COMMENT '应用数据表';
+
+CREATE TABLE `casbin_rule` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `p_type` varchar(255) NOT NULL DEFAULT '',
+  `v0` varchar(255) NOT NULL DEFAULT '',
+  `v1` varchar(255) NOT NULL DEFAULT '',
+  `v2` varchar(255) NOT NULL DEFAULT '',
+  `v3` varchar(255) NOT NULL DEFAULT '',
+  `v4` varchar(255) NOT NULL DEFAULT '',
+  `v5` varchar(255) NOT NULL DEFAULT '',
+  PRIMARY KEY (`id`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `auth_user` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `username` varchar(30) NOT NULL,
+  `password` varchar(128) NOT NULL,
+  `status` INT NOT NULL,
+  `create_time` DATETIME NOT NULL,
+  `update_time` DATETIME NOT NULL,
+  `extra_info` JSON NOT NULL,
+  PRIMARY KEY (`id`),
+  UNIQUE KEY `username` (`username`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
+
+
+
+CREATE TABLE IF NOT EXISTS `user` (
+`appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+`uid` bigint NOT NULL,
+`front_uid` bigint NOT NULL,
+
+`base_money` decimal(15,3) NOT NULL COMMENT '充值余额',
+`gift_money` decimal(15,3) NOT NULL COMMENT '赠送余额',
+
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`update_time` DATETIME NOT NULL COMMENT '上次登录时间',
+`status` INT NOT NULL COMMENT '充入状态,0:正常,2:封号',
+`extra_info` JSON NOT NULL,
+
+PRIMARY KEY (`appid`,`uid`)
+) ENGINE=Innodb  DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS `cookie_user` (
+`appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+`cookie` varchar(128) NOT NULL,
+`uid` bigint NOT NULL COMMENT '用户号',
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`extra_info` JSON NOT NULL,
+PRIMARY KEY (`appid`,`cookie`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `wechat_user` (
+`appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+`wx_appid` varchar(64) NOT NULL,
+`wx_openid` varchar(64) NOT NULL,
+`uid` bigint NOT NULL COMMENT '用户号',
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`extra_info` JSON NOT NULL,
+PRIMARY KEY (`appid`,`wx_appid`,`wx_openid`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `wechat_union_user` (
+`appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+`wx_op_account` varchar(64) NOT NULL,
+`wx_unionid` varchar(64) NOT NULL,
+`uid` bigint NOT NULL COMMENT '用户号',
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`extra_info` JSON NOT NULL,
+PRIMARY KEY (`appid`,`wx_op_account`,`wx_unionid`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS `order` (
+`appid` varchar(128) NOT NULL,
+`order_code` varchar(64) NOT NULL COMMENT '订单码',
+`front_uid` bigint NOT NULL COMMENT '推荐用户id',
+`benifit_uid` bigint NOT NULL COMMENT '受益者uid',
+`product_sale_id` bigint NOT NULL COMMENT '产品号',
+`product_num` INT NOT NULL COMMENT '购买产品数量',
+`uid` BIGINT NOT NULL COMMENT '购买用户id',
+`money` decimal(15,3) NOT NULL COMMENT '需支付准备使用的额外充值',
+`base_money` decimal(15,3) NOT NULL COMMENT '需支付准备使用的余额',
+`gift_money` decimal(15,3) NOT NULL COMMENT '需支付准备使用的赠送余额',
+`custom_data` VARCHAR(256) NOT NULL COMMENT '透传参数',
+`create_time` DATETIME NOT NULL COMMENT '订单创建时间',
+`pay_type` INT NOT NULL COMMENT '支付类型',
+`pay_status` INT NOT NULL COMMENT '支付状态,0:未支付,1:支付中,2:支付成功,3:支付失败',
+`pay_time` DATETIME NOT NULL COMMENT '支付时间',
+`pay_money` decimal(15,3) NOT NULL COMMENT '实际支付的额外充值',
+`pay_base_money` decimal(15,3) NOT NULL COMMENT '实际支付的余额',
+`pay_gift_money` decimal(15,3) NOT NULL COMMENT '实际支付的赠送余额',
+`status` INT NOT NULL COMMENT '充入状态,0:默认,1:充入中,2:重试充入中,3:充入成功,4:充入失败,5:退款成功,6:退款失败',
+`extra_info` JSON NOT NULL,
+PRIMARY KEY (`appid`,`create_time`, `order_code`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8 COMMENT '订单表'
+
+CREATE TABLE IF NOT EXISTS `material` (
+  `appid` varchar(128) NOT NULL,
+  `type` int not null,
+  `mid` varchar(64) NOT NULL,
+
+  `status` INT NOT NULL,
+  `create_time` DATETIME NOT NULL,
+  `extra_info` JSON NOT NULL,
+  PRIMARY KEY (`appid`,`type`,`mid`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8mb4;
+
+CREATE TABLE IF NOT EXISTS `material_log` (
+  `appid` varchar(128) NOT NULL,
+  `mlid` bigint NOT NULL,
+  `uid` bigint NOT NULL,
+
+  `type` int not null,
+  `create_time` DATETIME NOT NULL,
+  `extra_info` JSON NOT NULL,
+  PRIMARY KEY (`appid`,`create_time`,`mlid`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8mb4;
+
+
+
+CREATE TABLE IF NOT EXISTS `trade_log` (
+  `appid` varchar(128) NOT NULL,
+  `tid` varchar(64) NOT NULL,
+  `uid` bigint NOT NULL,
+
+  `type` int NOT NULL,
+
+  `way` INT NOT NULL,
+  `create_time` DATETIME NOT NULL,
+  `extra_info` JSON NOT NULL,
+  PRIMARY KEY (`appid`,`uid`,`create_time`,`way`,`tid`)
+) ENGINE=Innodb DEFAULT CHARSET=utf8mb4;
+
+
+CREATE TABLE IF NOT EXISTS `product_sale` (
+`appid` varchar(128) NOT NULL,
+`product_sale_id` bigint NOT NULL,
+
+`product_id` INT NOT NULL COMMENT '购买产品号',
+`type` INT NOT NULL COMMENT '购买产品类型',
+`status` INT NOT NULL COMMENT '产品状态. 0: 下架，1: 上架',
+`money` decimal(15,3) NOT NULL COMMENT '产品价格',
+`count` INT NOT NULL COMMENT '存货',
+`freeze_count` INT NOT NULL COMMENT '冻结存货',
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`sale_start_time` DATETIME NOT NULL COMMENT '销售起始时间',
+`sale_end_time` DATETIME NOT NULL COMMENT '销售结束时间',
+
+`extra_info` JSON NOT NULL,
+PRIMARY KEY (`appid`,`product_sale_id`),
+INDEX (`appid`,`status`,`sale_end_time`)
+
+) ENGINE=Innodb DEFAULT CHARSET=utf8 COMMENT '销售产品表';
+
+  PRODUCT_SALE_TYPE_RECHARGE              = 1
+  PRODUCT_SALE_TYPE_REWARD_TASK           = 2
+  PRODUCT_SALE_TYPE_LOTTERY_PRODUCT       = 3
+  PRODUCT_SALE_TYPE_LOTTERY_TIMES_PRODUCT = 4
+
+
+INSERT INTO `product_sale` (`appid`,`product_sale_id`,`product_id`,`type`,`status`,`money`,`count`,`freeze_count`,`create_time`,`sale_start_time`,`sale_end_time`,`extra_info`)
+VALUES ('grp149abc',1,1,1,1, '0.00', 0 ,0 ,'2018-09-03 00:00:00','2018-09-03 00:00:00','2020-09-03 00:00:00', '{"desc":"购买他就能增加余额的商品"}');
+
+
+
+INSERT INTO `product_sale` (`appid`,`product_sale_id`,`product_id`,`type`,`status`,`money`,`count`,`freeze_count`,`create_time`,`sale_start_time`,`sale_end_time`,`extra_info`)
+VALUES ('grp149abc',3,1,3,1, '0.00', 0 ,0 ,'2018-09-03 00:00:00','2018-09-03 00:00:00','2020-09-03 00:00:00', '{"desc":"购买它就能消耗抽奖次数来抽奖的商品"}');
+
+
+
+
+
+INSERT INTO `product_sale` (`appid`,`product_sale_id`,`product_id`,`type`,`status`,`money`,`count`,`freeze_count`,`create_time`,`sale_start_time`,`sale_end_time`,`extra_info`)
+VALUES ('grp149abc',4,1,4,1, '0.00', 0 ,0 ,'2018-09-03 00:00:00','2018-09-03 00:00:00','2020-09-03 00:00:00', '{"desc":"购买他就能增加抽奖次数的商品"}')
+
+
+INSERT INTO `product_sale` (`appid`,`product_sale_id`,`product_id`,`type`,`status`,`money`,`count`,`freeze_count`,`create_time`,`sale_start_time`,`sale_end_time`,`extra_info`)
+VALUES ('grp149abc',10001,1,10001,1, '50.00', 0 ,0 ,'2018-09-03 00:00:00','2018-09-03 00:00:00','2022-09-03 00:00:00', '{"desc":"50块电话充值卡"}')
+
+
+
+
+INSERT INTO `application` (`appid`,`appkey`,`create_time`,`status`,`extra_info`) VALUES('grp149abc','aad.','2018-05-30 00:00:00',1,'{}');
+
+
+
+INSERT INTO `channel` (`appid`,`chn_id`,`create_time`,`status`,`extra_info`) VALUES('grp149abc', 0,'2018-05-30 00:00:00',1,'{"hidden_chance":10}');
+
+
+INSERT INTO `channel` (`appid`,`chn_id`,`create_time`,`status`,`extra_info`) VALUES('grp149abc', 1234,'2018-05-30 00:00:00',1,'{"hidden_chance":10}');
+
+
+update `auth_user` set `extra_info`='{"is_superuser":0,"app_chn": {"grp149abc":[0,1234] }, "applications": ["grp149abc"]}';
+
