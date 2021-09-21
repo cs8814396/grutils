@@ -1,57 +1,36 @@
 package grdatabase
 
-/*
 import (
-	"encoding/json"
+	"errors"
+	"sync"
+
+	"gorm.io/driver/mysql"
+	"gorm.io/gorm"
 )
 
+/*type MysqlPoolMap struct {
+	//mutex   *sync.RWMutex
+	pool        sync.Map //map[string]*sql.DB
+	dnsPool     sync.Map
+	maxidlePool sync.Map
+}*/
 
-type jsonStruct struct {
-}
+var ormPool sync.Map
 
-func (e jsonStruct) Value() jsonStruct {
-	return e
-}
+func OrmGetConn(dbname string, dsn string, maxidleconn int) (g *gorm.DB, err error) {
 
-func (e *jsonStruct) Set(d []string) {
-	//*e = jsonStruct(d)
-}
+	if idb, ok := ormPool.Load(dbname); ok {
+		g = idb.(*gorm.DB)
 
-func (e *jsonStruct) Add(v string) {
-	//*e = append(*e, v)
-}
-
-func (e *jsonStruct) String() string {
-
-	bytes, _ := json.Marshal(*e)
-
-	return string(bytes)
-}
-
-func (e *jsonStruct) FieldType() int {
-	return TypeCharField
-}
-
-func (e *jsonStruct) SetRaw(value interface{}) error {
-	switch d := value.(type) {
-	case []string:
-		e.Set(d)
-	case string:
-		if len(d) > 0 {
-			parts := strings.Split(d, ",")
-			v := make([]string, 0, len(parts))
-			for _, p := range parts {
-				v = append(v, strings.TrimSpace(p))
-			}
-			e.Set(v)
-		}
-	default:
-		return fmt.Errorf("<jsonStruct.SetRaw> unknown value `%v`", value)
+		return
 	}
-	return nil
-}
 
-func (e *jsonStruct) RawValue() interface{} {
-	return e.String()
+	g, err = gorm.Open(mysql.Open(dsn), &gorm.Config{})
+	if err != nil {
+		err = errors.New("OrmGetConn open fail err=" + err.Error())
+		return
+	}
+	ormPool.Store(dbname, g)
+	return
+
 }
-*/

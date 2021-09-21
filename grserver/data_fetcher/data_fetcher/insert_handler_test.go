@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/gdgrc/grutils/grframework"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
+	model "data_fetcher/model"
 	"testing"
+
+	"github.com/gdgrc/grutils/grframework"
 )
 
 func testInsertData(t *testing.T) {

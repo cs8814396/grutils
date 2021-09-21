@@ -8,11 +8,12 @@ import (
 	"syscall"
 	"time"
 
+	econfig "data_fetcher/data_fetcherconf"
+
 	"github.com/gdgrc/grutils/grapps/config"
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grframework"
 	"github.com/gdgrc/grutils/grframework/fasthttp"
-	econfig "github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
 
 	"encoding/base64"
 )

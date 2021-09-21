@@ -7,6 +7,7 @@ import (
 	"github.com/gdgrc/grutils/grdatabase"
 	"github.com/gdgrc/grutils/grfile"
 	"github.com/gdgrc/grutils/grthird"
+	"gorm.io/gorm"
 )
 
 const (
@@ -85,6 +86,18 @@ func DataAdminGet(slave bool) (db *sql.DB, err error) {
 		dbname = dbname + "_slave"
 	}
 	return DefaultMysqlPool.DBGetConn(dbname, dsn, maxIdelConn)
+
+}
+
+func DataAdminOrmGet(slave bool) (db *gorm.DB, err error) {
+
+	dbname := DATA_ADMIN
+	dsn := GlobalConf.DataAdmin.AdminDsn
+	maxIdelConn := GlobalConf.DataAdmin.MaxIdleConn
+	if slave {
+		dbname = dbname + "_slave"
+	}
+	return grdatabase.OrmGetConn(dbname, dsn, maxIdelConn)
 
 }
 

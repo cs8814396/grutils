@@ -1,10 +1,11 @@
 package main
 
 import (
+	"data_fetcher/data_fetcherconf"
+	model "data_fetcher/model"
+	"data_fetcher/service"
+
 	"github.com/gdgrc/grutils/grdatabase"
-	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
-	"github.com/gdgrc/grutils/grserver/data_fetcher/service"
 
 	//"data_fetcher/service"
 	//"database/sql"

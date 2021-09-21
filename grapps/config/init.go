@@ -19,6 +19,10 @@ var DefaultMysqlPool grdatabase.MysqlPoolMap
 
 func BaseInit() bool {
 	DefaultLogger = new(grfile.Logger)
+	err := grfile.MakeFilePathDirIfNotExist(GlobalConf.DefaultLog.LogFile)
+	if err != nil {
+		panic("grutils BaseInit err: " + err.Error())
+	}
 
 	DefaultLogger.CreateLogger(GlobalConf.DefaultLog.LogFile, "grdfl", GlobalConf.DefaultLog.Level)
 

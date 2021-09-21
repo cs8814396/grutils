@@ -2,6 +2,8 @@ package grfile
 
 import (
 	"fmt"
+	"os"
+
 	"github.com/BurntSushi/toml"
 )
 
@@ -10,7 +12,8 @@ func LoadTomlFile(filename string, tomlStruct interface{}) (contents []byte, err
 
 	contents, err = ReadFile(filename)
 	if err != nil {
-		err = fmt.Errorf("LoadConfig: Error: Could not open %q: %s \n", filename, err)
+		dir, dirErr := os.Getwd()
+		err = fmt.Errorf("LoadConfig: Error: Could not open %q: %s.pwd: %s, pwderr: %s \n", filename, err, dir, dirErr)
 
 		return
 	}

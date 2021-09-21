@@ -6,12 +6,13 @@ import (
 	"math"
 	"reflect"
 
+	"data_fetcher/data_fetcherconf"
+	model "data_fetcher/model"
+	"data_fetcher/service"
+
 	"github.com/gdgrc/grutils/grapps/config/log"
 	"github.com/gdgrc/grutils/grdatabase"
 	"github.com/gdgrc/grutils/grframework"
-	"github.com/gdgrc/grutils/grserver/data_fetcher/data_fetcherconf"
-	model "github.com/gdgrc/grutils/grserver/data_fetcher/model"
-	"github.com/gdgrc/grutils/grserver/data_fetcher/service"
 
 	//"strings"
 	"encoding/json"
