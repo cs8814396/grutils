@@ -1,15 +1,17 @@
 package handler
 
 import (
-	"device_filter/reporter/conf"
-	"device_filter/reporter/model"
+	"reporter/conf"
+	"reporter/model"
+
 	//"encoding/json"
 
 	//"encoding/json"
 	"fmt"
+
 	"github.com/gdgrc/grutils/grapps/config/log"
+
 	//"github.com/gdgrc/grutils/grnetwork"
-	dfClient "github.com/gdgrc/grutils/grserver/data_fetcher/client"
 	"os"
 	"path"
 	"sync"
@@ -116,7 +118,6 @@ func WriteLog(event string, channel chan model.ReportData) {
 			continue
 		}
 
-		dataName:=dataMapSlice[0].GetDataName()
 		//过滤掉可能导致sql注入的字符
 
 		//发送日志json数组到适配器
@@ -141,19 +142,17 @@ func WriteLog(event string, channel chan model.ReportData) {
 			dataText = append(dataText, byte('\n'))
 			//----
 			rl, err := dataMap.DumpOrderedList()
-			if err!=nil{
+			if err != nil {
 				log.Error("Data Depreated! Unexpected behavior while DumpOrderedList!!! ", e, " dataMap: ", dataMap)
 				continue
 
 			}
-			if len(rl)>0{
+			if len(rl) > 0 {
 				dataSlice = append(dataSlice, rl)
 			}
-			
+
 			isContainedValidData = true
 		}
-
-
 
 		if !isContainedValidData {
 			log.Error("Contain invalid Data and be depreacated ")
@@ -177,15 +176,5 @@ func WriteLog(event string, channel chan model.ReportData) {
 
 		logFile.Write(dataText)
 
-		if len(dataSlice)>0{
-			if err := dfClient.Insert(dataName, dataSlice); err != nil {
-				log.Error("Unexpected behavior while insert!!! ", err, dataSlice)
-				continue
-			}
-		}
-
-		
-
 	}
 }
-

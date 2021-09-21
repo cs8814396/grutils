@@ -10,7 +10,7 @@ import (
 	//"github.com/mongodb/mongo-go-driver/core/result"
 
 	//"math"
-	"device_filter/reporter/model"
+	"reporter/model"
 
 	//dfModel "github.com/gdgrc/grutils/grserver/data_fetcher/model"
 	"encoding/json"
@@ -28,6 +28,12 @@ type CommReportReq struct {
 }
 type CommReportRsp struct {
 	//	Ids []string `json:"ids"`
+	//Result   int    `json:"result"`
+	//ExtraMsg string `json:"extraMsg"`
+}
+
+type ReportRsp struct {
+	Ids []string `json:"ids"`
 	//Result   int    `json:"result"`
 	//ExtraMsg string `json:"extraMsg"`
 }

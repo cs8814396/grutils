@@ -1,15 +1,16 @@
 package main
 
 import (
-	econfig "device_filter/reporter/conf"
 	"flag"
 	"fmt"
+	econfig "reporter/conf"
+
 	"github.com/gdgrc/grutils/grapps/config"
 	"github.com/gdgrc/grutils/grframework/fasthttp"
 
-	"device_filter/reporter/handler"
 	"os"
 	"path"
+	"reporter/handler"
 	"syscall"
 	"time"
 )
@@ -42,7 +43,6 @@ func main() {
 		return
 	}
 	fasthttp.Register("/commReport", handler.CommReport)
-	fasthttp.Register("/post_web_env_v2", handler.Report)
-	fasthttp.Register("/getWebEnvResults_v2", handler.GetResult)
+
 	fasthttp.ListenAndBlock(config.GlobalConf.Server.BindAddr)
 }
