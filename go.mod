@@ -8,7 +8,7 @@ require (
 	github.com/bradfitz/gomemcache v0.0.0-20190913173617-a41fca850d0b
 	github.com/buaazp/fasthttprouter v0.1.1
 	github.com/garyburd/redigo v1.6.0
-	github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20201114124017-d13127243cb9
+	github.com/gdgrc/grutils/grserver/data_fetcher v0.0.0-20201114124017-d13127243cb9 // indirect
 	github.com/go-sql-driver/mysql v1.6.0
 	github.com/miekg/dns v1.1.27
 	github.com/panjf2000/ants/v2 v2.3.0
