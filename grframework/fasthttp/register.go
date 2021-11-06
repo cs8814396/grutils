@@ -4,12 +4,13 @@ import (
 	"encoding/json"
 	//	"errors"
 	"fmt"
+	"reflect"
+	"runtime/debug"
+
 	"github.com/buaazp/fasthttprouter"
 	"github.com/gdgrc/grutils/grapps/config"
 	"github.com/gdgrc/grutils/grframework"
 	"github.com/valyala/fasthttp"
-	"reflect"
-	"runtime/debug"
 
 	"sync"
 )
@@ -133,18 +134,28 @@ func Register(funcPath string, h interface{}, middleware ...func(*grframework.Co
 
 		if c.IsGet() {
 
-			defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
+			/*defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
 			defaultResult.ErrMsg = "should not be get method"
-			return
+			return*/
 
-		}
+			query := string(c.Request.URI().QueryString())
+			err := QueryString2Struct(query, reqV.Interface())
+			if err != nil {
 
-		err := json.Unmarshal(c.PostBody(), reqV.Interface()) //c.PostBody()
-		if err != nil {
+				defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
+				defaultResult.ErrMsg = fmt.Sprintf("body umarshal fail. body: %s", c.PostBody())
+				return
+			}
 
-			defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
-			defaultResult.ErrMsg = fmt.Sprintf("body umarshal fail. body: %s", c.PostBody())
-			return
+		} else {
+			err := json.Unmarshal(c.PostBody(), reqV.Interface()) //c.PostBody()
+			if err != nil {
+
+				defaultResult.ErrCode = grframework.RESULT_FRAMEWORK_EXAMINE_FAIL
+				defaultResult.ErrMsg = fmt.Sprintf("body umarshal fail. body: %s", c.PostBody())
+				return
+			}
+
 		}
 
 		ret := v.Call([]reflect.Value{reflect.ValueOf(ctx), reqV, rspV})

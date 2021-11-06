@@ -65,9 +65,14 @@ func TimeToDateTime(t time.Time) string {
 	temp += string(timeStr[11:19])
 	return temp
 }
+
+func GetNowTime() time.Time {
+	return time.Now()
+}
+
 func GetFormatCurTime() string {
 
-	t := time.Now()
+	t := GetNowTime()
 
 	return TimeToDateTime(t)
 }

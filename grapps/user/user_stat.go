@@ -1,19 +1,13 @@
 package user
 
-import (
-	//drsql "database/sql"
-	"encoding/json"
-	"fmt"
-	"strconv"
+//drsql "database/sql"
 
-	"github.com/gdgrc/grutils/grapps/config"
-	"github.com/gdgrc/grutils/grcache"
-	//"grutils/grdatabase"
-	//"reflect"
-)
+//"grutils/grdatabase"
+//"reflect"
 
 var LastUid int64
 
+/*
 func FrontUserStat(appid string) (err error) {
 	sql := "SELECT `uid`,`front_uid`,`extra_info`  FROM `user` where `appid`= ? AND `uid`>0"
 
@@ -188,3 +182,4 @@ func GetNextUser(appid string, uid int64, chnId int64, iType int, layer int) (ne
 	return
 
 }
+*/

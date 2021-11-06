@@ -1,9 +1,14 @@
 package user
 
 import (
+	"database/sql"
 	drsql "database/sql"
+	"database/sql/driver"
 	"encoding/json"
+	"errors"
 	"fmt"
+	"reflect"
+	"time"
 
 	"github.com/gdgrc/grutils/grapps/config"
 	"github.com/gdgrc/grutils/grcache"
@@ -14,42 +19,89 @@ const (
 	REDIS_PREFIX_USER_FOR_PK = "RedisUser?appid=%s&uid=%d"
 )
 
-type User struct {
-	Appid      string  `json:"appid"`
-	Uid        int64   `json:"uid"`
-	FrontUid   int64   `json:"front_uid"`
-	BaseMoney  float64 `json:"base_money"`
-	GiftMoney  float64 `json:"gift_money"`
-	CreateTime string  `json:"create_time"`
-	UpdateTime string  `json:"update_time"`
+/*
+CREATE TABLE IF NOT EXISTS `user` (
+`appid` VARCHAR(128) NOT NULL COMMENT '应用编号',
+`uid` bigint NOT NULL,
+`front_uid` bigint NOT NULL,
 
-	ExtraInfo       UserExtraInfo `json:"extra_info" orm:"-"`
-	ExtraInfoString string        `json:"-" orm:"type(json);column(extra_info)"`
-	Status          int           `json:"status"`
+`base_money` decimal(15,3) NOT NULL COMMENT '充值余额',
+`gift_money` decimal(15,3) NOT NULL COMMENT '赠送余额',
 
-	//UidStr      string `json:"uid_str" orm:"-"`
-	//FrontUidStr string `json:"front_uid_str" orm:"-"`
-	RequestId string `json:"-"`
+`create_time` DATETIME NOT NULL COMMENT '创建时间',
+`update_time` DATETIME NOT NULL COMMENT '上次登录时间',
+`status` INT NOT NULL COMMENT '充入状态,0:正常,2:封号',
+`extra_info` JSON NOT NULL,
+
+PRIMARY KEY (`appid`,`uid`)
+) ENGINE=Innodb  DEFAULT CHARSET=utf8mb4;
+*/
+type AccountPasswordUser struct {
+	Appid      string    `json:"appid" gorm:"column:appid;type:varchar(128) not null"`
+	Uid        int64     `json:"uid" gorm:"column:uid;type:bigint not null"`
+	Account    string    `json:"account" gorm:"primary_key;column:appid;type:varchar(128) not null"`
+	Password   string    `gorm:"column:password;type:varchar(128) not null"`
+	CreateTime time.Time `json:"create_time" gorm:"column:create_time;type:DATETIME not null"`
+	UpdateTime time.Time `json:"update_time" gorm:"column:update_time;type:DATETIME not null"`
 }
-type UserExtraInfo struct {
-	Wechat         *UserExtraInfoWechat   `json:"wechat,omitempty"`
-	WechatMp       *UserExtraInfoWechatMp `json:"wechat_mp,omitempty"`
-	WechatOp       *UserExtraInfoWechatOp `json:"wechat_op,omitempty"`
-	Cookie         *UserExtraInfoCookie   `json:"cookie,omitempty"`
-	Achievement    map[string]int         `json:"achievement,omitempty"`
-	LotteryChances map[string]int         `json:"lottery_chances,omitempty"`
-	LotteryTimes   int                    `json:"lottery_times,omitempty"`
-	ChnId          int64                  `json:"chn_id,omitempty"`
-	FrontChnId     int64                  `json:"front_chn_id,omitempty"`
-	Nickname       string                 `json:"nickname"`
-	HeadImgUrl     string                 `json:"headimgurl"`
-	//Ip string `json:"ip"`
 
-	//Nickname string `json:"nickname"`
-	//Sex      string `json:"sex"`
-	//Province string `json:"province"`
-	//City     string `json:"city"`
-	//Country  string `json:"country"`
+func (g *AccountPasswordUser) TableName() string {
+	return "account_password_user"
+}
+
+type User struct {
+	Appid      string    `json:"appid" gorm:"primary_key;column:appid;type:varchar(128) not null"`
+	Uid        int64     `json:"uid" gorm:"primary_key;column:uid;type:bigint not null"`
+	FrontUid   int64     `json:"front_uid" gorm:"column:front_uid;type:bigint not null"`
+	BaseMoney  float64   `json:"base_money" gorm:"column:base_money;type:decimal(15,3) not null"`
+	GiftMoney  float64   `json:"gift_money" gorm:"column:gift_money;type:decimal(15,3) not null"`
+	CreateTime time.Time `json:"create_time" gorm:"column:create_time;type:DATETIME not null"`
+	UpdateTime time.Time `json:"update_time" gorm:"column:update_time;type:DATETIME not null"`
+
+	ExtraInfo       UserExtraInfo `json:"extra_info" gorm:"column:extra_info;type:json not null"` // UserExtraInfo
+	ExtraInfoString string        `json:"-" gorm:"-"`
+	Status          int           `json:"status" gorm:"column:status;type:int not null"`
+	//--------------
+	RequestId            string       `json:"-" gorm:"-"`
+	ExtraInfoReflectType reflect.Type `json:"-" gorm:"-"`
+}
+
+func (g *User) SetExtraInfoReflectType(t interface{}) reflect.Type {
+	g.ExtraInfoReflectType = reflect.TypeOf(t)
+	return g.ExtraInfoReflectType
+}
+func (g *User) TableName() string {
+	return "user"
+}
+
+// 实现 sql.Scanner 接口，Scan 将 value 扫描至 Jsonb
+func (j *UserExtraInfo) Scan(value interface{}) error {
+	bytes, ok := value.([]byte)
+	if !ok {
+		return errors.New(fmt.Sprint("Failed to unmarshal JSONB value:", value))
+	}
+	err := json.Unmarshal(bytes, j)
+	return err
+}
+
+// 实现 driver.Valuer 接口，Value 返回 json value
+func (j UserExtraInfo) Value() (driver.Value, error) {
+	return json.Marshal(j)
+}
+
+type UserExtraInfo struct {
+	Wechat          *UserExtraInfoWechat              `json:"wechat,omitempty"`
+	WechatMp        *UserExtraInfoWechatMp            `json:"wechat_mp,omitempty"`
+	WechatOp        *UserExtraInfoWechatOp            `json:"wechat_op,omitempty"`
+	Cookie          *UserExtraInfoCookie              `json:"cookie,omitempty"`
+	AccountPassword *UserExtraInfoAccountPasswordUser `json:"account_password,omitempty"`
+	Achievement     map[string]int                    `json:"achievement,omitempty"`
+	LotteryChances  map[string]int                    `json:"lottery_chances,omitempty"`
+	LotteryTimes    int                               `json:"lottery_times,omitempty"`
+	ChnId           int64                             `json:"chn_id,omitempty"`
+	FrontChnId      int64                             `json:"front_chn_id,omitempty"`
+	Nickname        string                            `json:"nickname"`
+	HeadImgUrl      string                            `json:"headimgurl"`
 }
 type UserExtraInfoWechat struct {
 	WxAppid  string `json:"wx_appid"`
@@ -65,6 +117,9 @@ type UserExtraInfoWechatOp struct {
 }
 
 type UserExtraInfoCookie struct {
+	Cookie string `json:"cookie"`
+}
+type UserExtraInfoAccountPasswordUser struct {
 	Cookie string `json:"cookie"`
 }
 
@@ -103,6 +158,7 @@ func (u *User) TxRewardMoney(tx *drsql.Tx, rewardBaseMoney float64, rewardGiftMo
 	return
 
 }
+
 func (u *User) TxAddLotteryTimes(tx *drsql.Tx) (err error) {
 
 	sql := "UPDATE `user` SET `extra_info`=JSON_SET(`extra_info`,'$.lottery_times', ?) WHERE `appid` = ? AND `uid` = ? LIMIT 1"
@@ -120,6 +176,7 @@ func (u *User) TxAddLotteryTimes(tx *drsql.Tx) (err error) {
 	return
 
 }
+
 func UserAddLotteryChances(appid string, uid int64, payMoney float64) (err error) {
 	adminConn, err := config.DataAdminGet(false)
 	if err != nil {
@@ -147,7 +204,23 @@ func UserAddLotteryChances(appid string, uid int64, payMoney float64) (err error
 	rollFlag = false
 	return
 }
+
 func (u *User) TxAddAchievement(tx *drsql.Tx, achievementKey string) (err error) {
+	rollFlag := true
+	if tx == nil {
+		var adminConn *sql.DB
+		adminConn, err = config.DataAdminGet(false)
+		if err != nil {
+			return
+		}
+		tx, err = adminConn.Begin()
+		if err != nil {
+			return
+		}
+
+		defer grdatabase.MysqlClearTransaction(tx, &rollFlag)
+
+	}
 
 	sql := fmt.Sprintf("UPDATE `user` SET `extra_info`=JSON_SET(`extra_info`,'$.achievement.%s', ?) WHERE `appid` = ? AND `uid` = ? LIMIT 1", achievementKey)
 	//sql += "`extra_info`= JSON_SET(`extra_info`,'$.update_time', ? , $.head_url', ? ,'$.sex', ? )"
@@ -177,6 +250,8 @@ func (u *User) TxAddAchievement(tx *drsql.Tx, achievementKey string) (err error)
 	if err != nil {
 		return
 	}
+
+	rollFlag = false
 	return
 
 }
@@ -251,14 +326,14 @@ func (u *User) TxUseLotteryChances(tx *drsql.Tx, payMoney float64) (err error) {
 		return
 
 	} else {
-		fmt.Errorf("no chance? user: %+v ,payMoney: %0.2f", u, payMoney)
+		err = fmt.Errorf("no chance? user: %+v ,payMoney: %0.2f", u, payMoney)
 	}
 	return
 
 }
 
 func GetUserForUpdate(tx *drsql.Tx, appid string, uid int64) (u User, err error) {
-	userSql := "SELECT `appid`,`uid`,`front_uid`,`base_money`,`gift_money`,date_format(`create_time`, '%Y-%m-%d %H:%i:%s'),date_format(`update_time`, '%Y-%m-%d %H:%i:%s'),`status`,`extra_info`  FROM `user` where `appid`= ? AND `uid`= ? limit 1 FOR UPDATE"
+	userSql := "SELECT `appid`,`uid`,`front_uid`,`base_money`,`gift_money`,`create_time`,`update_time`,`status`,`extra_info`  FROM `user` where `appid`= ? AND `uid`= ? limit 1 FOR UPDATE"
 
 	err = tx.QueryRow(userSql, appid, uid).Scan(&u.Appid, &u.Uid, &u.FrontUid, &u.BaseMoney, &u.GiftMoney, &u.CreateTime, &u.UpdateTime, &u.Status, &u.ExtraInfoString)
 	if err != nil {
@@ -300,6 +375,7 @@ func UserChargeMoney(tx *drsql.Tx, appid string, uid int64, payBaseMoney float64
 	return
 }
 
+/*
 func (u *User) UpdateBaseInfo() (err error) {
 	//INSERT INTO `client` (`appid`,`client_id`,`pt_id`,`customer_id`,`create_time`, `status`,`extra_info`) VALUES('test1','test2','test3','test4','2018-05-05 00:00:00',1,'{}') ON DUPLICATE KEY UPDATE `extra_info` =JSON_SET(`extra_info`,'$.head_url','good2','$.sex', 2);
 	sql := "UPDATE `user` SET `update_time`= ?, `status` = ? ,`extra_info` = JSON_SET(`extra_info`, '$.nickname', ? , '$.headimgurl', ? ) WHERE `appid` = ? AND `uid` = ? limit 1"
@@ -309,14 +385,7 @@ func (u *User) UpdateBaseInfo() (err error) {
 	if err != nil {
 		return
 	}
-	/*
-		var extra_info_bytes []byte
-		extra_info_bytes, err = json.Marshal(u.ExtraInfo)
-		if err != nil {
 
-			return
-		}
-		u.ExtraInfoString = string(extra_info_bytes)*/
 
 	paramSlice := make([]interface{}, 0)
 	paramSlice = append(paramSlice, u.UpdateTime, u.Status, u.ExtraInfo.Nickname, u.ExtraInfo.HeadImgUrl, u.Appid, u.Uid)
@@ -330,6 +399,8 @@ func (u *User) UpdateBaseInfo() (err error) {
 	return
 
 }
+*/
+/*
 func (u *User) UpdateWechatOpInfo() (err error) {
 	//INSERT INTO `client` (`appid`,`client_id`,`pt_id`,`customer_id`,`create_time`, `status`,`extra_info`) VALUES('test1','test2','test3','test4','2018-05-05 00:00:00',1,'{}') ON DUPLICATE KEY UPDATE `extra_info` =JSON_SET(`extra_info`,'$.head_url','good2','$.sex', 2);
 	sql := "UPDATE `user` SET `extra_info`=JSON_SET(`extra_info`, '$.wechat_op', JSON_MERGE('{}',?)) WHERE `appid` = ? AND `uid` = ? LIMIT 1"
@@ -359,7 +430,7 @@ func (u *User) UpdateWechatOpInfo() (err error) {
 	return
 
 }
-
+*/
 func GetUserFromDBorCache(appid string, uid int64, slave bool) (newItem User, exist bool, err error) {
 	err, conn := grcache.RedisConnOPGet(config.GRAPPS_REDIS, &config.GlobalConf.RedisPool)
 
@@ -382,7 +453,7 @@ func GetUserFromDBorCache(appid string, uid int64, slave bool) (newItem User, ex
 		}
 	}
 
-	sql := "SELECT `appid`,`uid`,`front_uid`,`base_money`,`gift_money`,date_format(`create_time`, '%Y-%m-%d %H:%i:%s'),date_format(`update_time`, '%Y-%m-%d %H:%i:%s'),`status`,`extra_info`  FROM `user` where `appid`= ? AND `uid`= ?  limit 1"
+	sql := "SELECT `appid`,`uid`,`front_uid`,`base_money`,`gift_money`,`create_time`,`update_time`,`status`,`extra_info`  FROM `user` where `appid`= ? AND `uid`= ?  limit 1"
 
 	paramSlice := make([]interface{}, 0)
 	paramSlice = append(paramSlice, appid)
@@ -562,7 +633,7 @@ func GetCookieUserFromDBorCache(appid string, cookie string, slave bool) (newIte
 
 	}
 
-	sql := "SELECT `appid`,`uid`,`cookie`,date_format(`create_time`, '%Y-%m-%d %H:%i:%s'),`extra_info` FROM `cookie_user` where `appid`= ? AND `cookie`= ? limit 1"
+	sql := "SELECT `appid`,`uid`,`cookie`,`create_time`,`extra_info` FROM `cookie_user` where `appid`= ? AND `cookie`= ? limit 1"
 
 	paramSlice := make([]interface{}, 0)
 	paramSlice = append(paramSlice, appid)
