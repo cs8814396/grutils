@@ -2,7 +2,7 @@ package consul
 
 import (
 	//"encoding/json"
-	"grutils/grapps/config"
+	"github.com/gdgrc/grutils/grapps/config"
 
 	"testing"
 )

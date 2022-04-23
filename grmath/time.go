@@ -2,13 +2,16 @@ package grmath
 
 import (
 	"encoding/json"
+	"strings"
 
 	"time"
 )
 
 const (
-	DEFAULT_DATETIME = "1970-01-01 00:00:00"
-	DATETIME_FORMAT  = "2006-01-02 15:04:05"
+	DEFAULT_DATETIME           = "1970-01-01 00:00:00"
+	MILISECOND_DATETIME_FORMAT = "2006-01-02 15:04:05."
+	DATETIME_FORMAT            = "2006-01-02 15:04:05"
+	DATE_FORMAT                = "2006-01-02"
 )
 
 func GetNanoTimeStampByTimeString(timeString string) (ts int64, err error) {
@@ -47,14 +50,29 @@ func GetCurTimeStamp() (ts int64, err error) {
 	return GetTimeStampByTimeString(nowString)
 }
 
-func IsStandardTime(inTime string) (t time.Time, success bool) {
+func IsStandardTime(inTime string) (t time.Time, err error) {
 	//timeFormat := "2006-01-02 15:04:05"
 	//func Unix(sec int64, nsec int64) Time {
 
-	t, err := time.Parse(DATETIME_FORMAT, inTime)
+	t, err = time.Parse(DATETIME_FORMAT, inTime)
 	if err == nil {
-		success = true
+
+		return
 	}
+	t, err = time.Parse(DATE_FORMAT, inTime)
+	if err == nil {
+
+		return
+	}
+
+	arr := strings.Split(inTime, ".")
+
+	t, err = time.Parse(DATETIME_FORMAT, arr[0])
+	if err == nil {
+
+		return
+	}
+
 	return
 
 }

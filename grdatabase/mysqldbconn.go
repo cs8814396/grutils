@@ -4,19 +4,49 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"strconv"
+	"strings"
+	"sync"
+
 	"github.com/gdgrc/grutils/grcommon"
 	_ "github.com/go-sql-driver/mysql"
-	"strconv"
-	"sync"
 )
+
+func NewDatabaseConn(s *sql.DB) *DatabaseConn {
+	databaseConn := &DatabaseConn{s}
+	return databaseConn
+}
 
 type DatabaseConn struct {
 	*sql.DB
 }
 
-func (this *DatabaseConn) NewTableConn(tableName string) *TableConn {
+func (d *DatabaseConn) GetTableList() (tableList []string, err error) {
+
+	rawFuncDescSql := "SHOW TABLES"
+	rows, err := d.Query(rawFuncDescSql)
+	if err != nil {
+		return
+	}
+	tableList = make([]string, 0)
+	for rows.Next() {
+		var name string
+
+		err = rows.Scan(&name)
+		if err != nil {
+
+			return
+		}
+		tableList = append(tableList, name)
+
+	}
+	return
+
+}
+
+func (d *DatabaseConn) NewTableConn(tableName string) *TableConn {
 	var tc TableConn
-	tc.DB = this.DB
+	tc.DB = d.DB
 	tc.TableName = tableName
 
 	return &tc
@@ -24,12 +54,68 @@ func (this *DatabaseConn) NewTableConn(tableName string) *TableConn {
 
 type TableConn struct {
 	DatabaseConn
-	TableName string
-	Fields    []string
+	TableName         string
+	Fields            []*Field
+	IsTurnColumnUpper bool
+
+	LastQueryReq *QueryReq
 }
 
-func (this *TableConn) QueryToMap(querySql string, params []interface{}, isPure bool) (retSlice []map[string]string, err error) {
-	tablRows, err := this.Query(querySql, params...)
+type QueryReq struct {
+	ReadLineNum      int
+	BeginIndex       int
+	BeginIdIndex     interface{}
+	BeginIdIndexName string
+	ExtraSql         string
+}
+
+func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string, err error) {
+	err = t.DB.Ping()
+	if err != nil {
+		return
+	}
+	if q != nil {
+		t.LastQueryReq = q
+	}
+	if t.LastQueryReq == nil {
+		t.LastQueryReq = &QueryReq{ReadLineNum: 100000}
+	}
+	sql, args, err := t.GetSelectSql(t.LastQueryReq)
+	if err != nil {
+		return
+	}
+
+	rowsMap, err = t.QueryToMap(sql, args, false)
+	if err != nil {
+		return
+	}
+
+	//log.Printf("ReadNext.Sql: %s,args: %+v length: %d\n", sql, args, len(rowsMap))
+	if len(rowsMap) == 0 {
+		// read ot
+		return
+	}
+	if t.LastQueryReq.BeginIdIndexName != "" {
+		newBeginIdIndex := rowsMap[len(rowsMap)-1][t.LastQueryReq.BeginIdIndexName]
+		if t.LastQueryReq.BeginIdIndex == nil {
+			t.LastQueryReq.BeginIndex = 1
+		} else if newBeginIdIndex == t.LastQueryReq.BeginIdIndex {
+			t.LastQueryReq.BeginIndex = t.LastQueryReq.BeginIndex + t.LastQueryReq.ReadLineNum
+		} else {
+			// newBeginIdIndex!= t.LastQueryReq.BeginIdIndex
+			t.LastQueryReq.BeginIndex = 1
+		}
+		t.LastQueryReq.BeginIdIndex = newBeginIdIndex
+
+	} else {
+		t.LastQueryReq.BeginIndex = t.LastQueryReq.BeginIndex + t.LastQueryReq.ReadLineNum
+	}
+
+	return
+}
+
+func (t *TableConn) QueryToMap(querySql string, params []interface{}, isPure bool) (retSlice []map[string]string, err error) {
+	tablRows, err := t.Query(querySql, params...)
 	if err != nil {
 		return
 	}
@@ -61,6 +147,9 @@ func (this *TableConn) QueryToMap(querySql string, params []interface{}, isPure 
 
 		for columnIndex, columnName := range columns {
 
+			if t.IsTurnColumnUpper {
+				columnName = strings.ToUpper(columnName)
+			}
 			tmpMap[columnName] = string(values[columnIndex])
 		}
 
@@ -81,52 +170,133 @@ func (this *TableConn) QueryToMap(querySql string, params []interface{}, isPure 
 	return
 }
 
-func (this *TableConn) GetSelectSql() (sql string, err error) {
+func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, err error) {
 	sql = "SELECT "
-	fields, err := this.GetFields()
+	fields, err := t.GetFields()
 	if err != nil {
 		return
 	}
 
 	for _, field := range fields {
-
-		sql += fmt.Sprintf("`%s`,", field)
+		sql += fmt.Sprintf("`%s`,", field.Name)
 	}
-
+	order := ""
 	lengthSql := len(sql)
 	sql = sql[:lengthSql-1]
 
-	sql += fmt.Sprintf(" FROM `%s` ", this.TableName)
+	sql += fmt.Sprintf(" FROM `%s` ", t.TableName)
+
+	args = make([]interface{}, 0, 0)
+	if q.BeginIdIndexName != "" {
+
+		if q.BeginIdIndex != nil {
+			// 有可能读重复
+			sql += fmt.Sprintf(" WHERE `%s` >= ? ", q.BeginIdIndexName)
+			args = append(args, q.BeginIdIndex)
+
+		}
+		order = " order by " + q.BeginIdIndexName
+	}
+
+	if q.ExtraSql != "" {
+		if strings.Contains(sql, "WHERE") {
+			sql += (" AND " + q.ExtraSql)
+		} else {
+			sql += ("WHERE " + q.ExtraSql)
+		}
+	}
+	sql += order
+	// limit begin
+	if q.ReadLineNum > 0 {
+		sql += " LIMIT "
+		if q.BeginIndex != 0 {
+			//begin = begin_index if begin_index > -1 else 0
+			sql += fmt.Sprintf(" %d, ", (q.BeginIndex))
+		}
+
+		sql += fmt.Sprintf(" %d", q.ReadLineNum)
+	}
 
 	return
 
 }
 
-func (this *TableConn) GetFields() (fields []string, err error) {
-	if this.Fields == nil {
+/*
 
-		rawFuncDescSql := fmt.Sprintf("DESC `%s`", this.TableName)
-		rows, err0 := this.Query(rawFuncDescSql)
+try:
+
+
+
+
+	# print(sql, args_list)
+	rows = None
+	rows_length = None
+	if dict_query:
+		rows, rows_length = self.db_conn_object.dict_query(sql, args_list)
+	else:
+		rows, rows_length = self.db_conn_object.query(sql, args_list)
+
+	"""
+	# i do not think we should travel
+	for row in rows:
+		tmp_list = []
+		for data in row:
+			data_tmp = ''
+			if data is not None:
+				data_tmp = str(data)
+
+			tmp_list.append(data)
+		data_list.append(tmp_list)
+	"""
+
+	# msg = "Finish reading table %s,read_index: %d,total_len: %d,one for fields' name" % (tbname, demoindex, len(data_list))
+	# echomsg(msg, False)
+
+	return rows, rows_length
+except Exception as e:
+	raise Exception("sql execute error: " + sql)
+*/
+
+type Field struct {
+	Name   string
+	Type   string
+	IsNull bool
+}
+
+func (t *TableConn) GetFields() (fields []*Field, err error) {
+	if t.Fields == nil {
+
+		rawFuncDescSql := fmt.Sprintf("DESC `%s`", t.TableName)
+		rows, err0 := t.Query(rawFuncDescSql)
 		if err0 != nil {
 			err = err0
 			return
 
 		}
-		fields = make([]string, 0)
+		fields = make([]*Field, 0)
 		for rows.Next() {
-			var field, ttype string
-			var t1, t2, t3, t4 interface{}
-			err = rows.Scan(&field, &ttype, &t1, &t2, &t3, &t4)
+			var IsNull string
+			var t2, t3, t4 interface{}
+
+			var field = Field{}
+			err = rows.Scan(&field.Name, &field.Type, &IsNull, &t2, &t3, &t4)
 			if err != nil {
 
 				return
 			}
-			fields = append(fields, field)
+			if IsNull == "YES" {
+				field.IsNull = true
+			}
+			if t.IsTurnColumnUpper {
+				field.Name = strings.ToUpper(field.Name)
+			}
+			field.Type = strings.ToUpper(field.Type)
+			fields = append(fields, &field)
 
 		}
-		this.Fields = fields
+		t.Fields = fields
 	}
-	return this.Fields, nil
+	return t.Fields, nil
 }
 
 type XmlMysqlDsn struct {

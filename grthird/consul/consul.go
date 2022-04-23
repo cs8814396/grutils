@@ -3,8 +3,9 @@ package consul
 import (
 	"encoding/json"
 	"fmt"
-	"grutils/grmath"
-	"grutils/grnetwork"
+
+	"github.com/gdgrc/grutils/grmath"
+	"github.com/gdgrc/grutils/grnetwork"
 )
 
 type Consul struct {

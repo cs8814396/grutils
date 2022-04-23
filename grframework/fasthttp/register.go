@@ -178,5 +178,5 @@ func Register(funcPath string, h interface{}, middleware ...func(*grframework.Co
 
 	}
 	fhr.POST(funcPath, handler)
-
+	fhr.GET(funcPath, handler)
 }
