@@ -4,11 +4,13 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"log"
 	"strconv"
 	"strings"
 	"sync"
 
 	"github.com/gdgrc/grutils/grcommon"
+
 	_ "github.com/go-sql-driver/mysql"
 )
 
@@ -59,6 +61,14 @@ type TableConn struct {
 	IsTurnColumnUpper bool
 
 	LastQueryReq *QueryReq
+	// writer
+	writerLock                sync.Mutex
+	cacheWriteList            [][]interface{}
+	writeSql                  string
+	ignore                    bool
+	WriteOnDuplicateFieldList []string
+	TotalWriteNum             int64
+	TotalAffectedNum          int64
 }
 
 type QueryReq struct {
@@ -67,8 +77,11 @@ type QueryReq struct {
 	BeginIdIndex     interface{}
 	BeginIdIndexName string
 	ExtraSql         string
+
+	SelectFields []string
 }
 
+// 可能会重复读，但是不会少读。
 func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string, err error) {
 	err = t.DB.Ping()
 	if err != nil {
@@ -93,15 +106,19 @@ func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string,
 	//log.Printf("ReadNext.Sql: %s,args: %+v length: %d\n", sql, args, len(rowsMap))
 	if len(rowsMap) == 0 {
 		// read ot
+		log.Printf("Table: %s Read Finish. sql: %s args: %+v \n", t.TableName, sql, args)
 		return
 	}
 	if t.LastQueryReq.BeginIdIndexName != "" {
 		newBeginIdIndex := rowsMap[len(rowsMap)-1][t.LastQueryReq.BeginIdIndexName]
 		if t.LastQueryReq.BeginIdIndex == nil {
+			// 没有开始id, 理论上同最后一个情况。至少跳过一行
 			t.LastQueryReq.BeginIndex = 1
 		} else if newBeginIdIndex == t.LastQueryReq.BeginIdIndex {
+			// 假如最后一行的id值 和 查询条件开始的id值相同，证明这次的查询结果所有的 id值都是相同的，所以需要跳过这个查询部分，否则就会死循环
 			t.LastQueryReq.BeginIndex = t.LastQueryReq.BeginIndex + t.LastQueryReq.ReadLineNum
 		} else {
+			// 除去上面两种情况，读到了不同于查询起始条件的值，又因为读到过，所以下次开始的时候至少跳过一行。 (的确可能重复读)
 			// newBeginIdIndex!= t.LastQueryReq.BeginIdIndex
 			t.LastQueryReq.BeginIndex = 1
 		}
@@ -172,49 +189,64 @@ func (t *TableConn) QueryToMap(querySql string, params []interface{}, isPure boo
 
 func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, err error) {
 	sql = "SELECT "
-	fields, err := t.GetFields()
-	if err != nil {
-		return
-	}
 
-	for _, field := range fields {
-		sql += fmt.Sprintf("`%s`,", field.Name)
+	if q != nil && len(q.SelectFields) > 0 {
+
+		for _, field := range q.SelectFields {
+			sql += fmt.Sprintf("`%s`,", field)
+		}
+		lengthSql := len(sql)
+		sql = sql[:lengthSql-1]
+	} else {
+		var fields Fields
+		fields, err = t.GetFields()
+		if err != nil {
+			return
+		}
+
+		for _, field := range fields {
+			sql += fmt.Sprintf("`%s`,", field.Name)
+		}
+		lengthSql := len(sql)
+		sql = sql[:lengthSql-1]
 	}
 	order := ""
-	lengthSql := len(sql)
-	sql = sql[:lengthSql-1]
 
 	sql += fmt.Sprintf(" FROM `%s` ", t.TableName)
 
 	args = make([]interface{}, 0, 0)
-	if q.BeginIdIndexName != "" {
 
-		if q.BeginIdIndex != nil {
-			// 有可能读重复
-			sql += fmt.Sprintf(" WHERE `%s` >= ? ", q.BeginIdIndexName)
-			args = append(args, q.BeginIdIndex)
+	if q != nil {
 
-		}
-		order = " order by " + q.BeginIdIndexName
-	}
+		if q.BeginIdIndexName != "" {
 
-	if q.ExtraSql != "" {
-		if strings.Contains(sql, "WHERE") {
-			sql += (" AND " + q.ExtraSql)
-		} else {
-			sql += ("WHERE " + q.ExtraSql)
-		}
-	}
-	sql += order
-	// limit begin
-	if q.ReadLineNum > 0 {
-		sql += " LIMIT "
-		if q.BeginIndex != 0 {
-			//begin = begin_index if begin_index > -1 else 0
-			sql += fmt.Sprintf(" %d, ", (q.BeginIndex))
+			if q.BeginIdIndex != nil {
+				// 有可能读重复
+				sql += fmt.Sprintf(" WHERE `%s` >= ? ", q.BeginIdIndexName)
+				args = append(args, q.BeginIdIndex)
+
+			}
+			order = " order by " + q.BeginIdIndexName
 		}
 
-		sql += fmt.Sprintf(" %d", q.ReadLineNum)
+		if q.ExtraSql != "" {
+			if strings.Contains(sql, "WHERE") {
+				sql += (" AND " + q.ExtraSql)
+			} else {
+				sql += ("WHERE " + q.ExtraSql)
+			}
+		}
+		sql += order
+		// limit begin
+		if q.ReadLineNum > 0 {
+			sql += " LIMIT "
+			if q.BeginIndex != 0 {
+				//begin = begin_index if begin_index > -1 else 0
+				sql += fmt.Sprintf(" %d, ", (q.BeginIndex))
+			}
+
+			sql += fmt.Sprintf(" %d", q.ReadLineNum)
+		}
 	}
 
 	return
@@ -256,6 +288,25 @@ try:
 except Exception as e:
 	raise Exception("sql execute error: " + sql)
 */
+type Fields []*Field
+
+func (fs Fields) Fmt() string {
+	s := ""
+	for i, f := range fs {
+		s += fmt.Sprintf("i: %d f: %+v\n", i, f)
+	}
+	return s
+}
+func (fs Fields) FindColumnName(name string) (ok bool) {
+	ok = false
+	for _, v := range fs {
+		if v.Name == name {
+			ok = true
+
+		}
+	}
+	return
+}
 
 type Field struct {
 	Name   string
@@ -263,7 +314,7 @@ type Field struct {
 	IsNull bool
 }
 
-func (t *TableConn) GetFields() (fields []*Field, err error) {
+func (t *TableConn) GetFields() (fields Fields, err error) {
 	if t.Fields == nil {
 
 		rawFuncDescSql := fmt.Sprintf("DESC `%s`", t.TableName)
@@ -327,6 +378,7 @@ func OpenAndTestDB(name, dsn string, maxidle int) (db *sql.DB, err error) {
 
 	err = db.Ping()
 	if err != nil {
+		db.Close()
 		return nil, errors.New("DB " + name + " ping err=" + err.Error())
 	}
 
@@ -353,11 +405,18 @@ func (mp *MysqlPoolMap) DBGetConn(dbname string, dsn string, maxidleconn int) (d
 
 		maxidleconn = MINIMAL_DB_CONN
 	}
+	var db0 *sql.DB
+	retryTimes := 2
+	for i := 0; i <= retryTimes; i++ {
+		i++
+		db0, err = OpenAndTestDB(dbname, dsn, maxidleconn)
+		if err == nil {
+			break
+		}
 
-	db0, err0 := OpenAndTestDB(dbname, dsn, maxidleconn)
-	if err0 != nil {
-
-		err = errors.New("OpenAndTestDB dbname=" + dbname + ", dsn=" + dsn + " idle=" + strconv.Itoa(maxidleconn) + " err=" + err0.Error())
+	}
+	if err != nil {
+		err = errors.New("OpenAndTestDB dbname=" + dbname + ", dsn=" + dsn + " idle=" + strconv.Itoa(maxidleconn) + " err=" + err.Error() + "retryTimes=" + strconv.Itoa(retryTimes))
 		return
 	}
 

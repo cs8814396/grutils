@@ -3,6 +3,7 @@ package consul
 import (
 	//"encoding/json"
 	"github.com/gdgrc/grutils/grapps/config"
+	"github.com/gdgrc/grutils/grmath"
 
 	"testing"
 )
@@ -17,8 +18,27 @@ ARMCHAIR_CONSUME_PAY_TYPE = (
 
 func Test_Consul(t *testing.T) {
 	// go test -v -test.run Test_WechatMp
-	config.Init("../../config.xml")
+	config.Init("/home/.../coding/massive_data_server/bin/massive_data_query_server/config.xml")
 	c := NewConsul(config.GlobalConf.DefaultConsulConfig.Host, config.GlobalConf.DefaultConsulConfig.Port)
+	c.IsMetaEncrypt = true
+	var arb grmath.Aes256Rc5Base64Cryptor
+
+	arb.AesKey = []byte(config.GlobalConf.Aes.AesKey)
+	arb.AesIv = []byte(config.GlobalConf.Aes.AesIV)
+	arb.Rc4Key = []byte(config.GlobalConf.Rc4.Rc4Key)
+
+	encryptData, err := arb.Encrypt([]byte(`{"username": "admin", "password": "Dor9632a32..."}`))
+	if err != nil {
+		t.Fatalf("encrypt err: %s", err.Error())
+	}
+
+	dd, err := arb.Decrypt(string(encryptData))
+	if err != nil {
+		t.Fatalf("decrypt err: %s", err.Error())
+	}
+	t.Logf("encrypt data: %s dd: %s", string(encryptData), string(dd))
+
+	c.MetaCryptor = &arb
 
 	/*
 		c.IsMetaEncrypt = true

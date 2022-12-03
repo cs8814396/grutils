@@ -12,6 +12,7 @@ const (
 	MILISECOND_DATETIME_FORMAT = "2006-01-02 15:04:05."
 	DATETIME_FORMAT            = "2006-01-02 15:04:05"
 	DATE_FORMAT                = "2006-01-02"
+	TIMEZONE_DATETIME_FORMAT   = "2006-01-02T15:04:05Z07:00"
 )
 
 func GetNanoTimeStampByTimeString(timeString string) (ts int64, err error) {
@@ -59,6 +60,17 @@ func IsStandardTime(inTime string) (t time.Time, err error) {
 
 		return
 	}
+	t, err = time.Parse(DATE_FORMAT, inTime)
+	if err == nil {
+
+		return
+	}
+	t, err = time.Parse(TIMEZONE_DATETIME_FORMAT, inTime)
+	if err == nil {
+
+		return
+	}
+
 	t, err = time.Parse(DATE_FORMAT, inTime)
 	if err == nil {
 

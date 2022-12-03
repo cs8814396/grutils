@@ -168,14 +168,16 @@ func Aes256Rc5Base64Encrypt(data []byte, key []byte, iv []byte, rc4Key []byte) (
 	aesDataEncodeToString := hex.EncodeToString(tmpBytes)
 	tmpBytes = []byte(aesDataEncodeToString)
 
-	rc4obj, err := rc4.NewCipher(rc4Key)
+	/*rc4obj, err := rc4.NewCipher(rc4Key)
 	if err != nil {
 		return
 	}
 
 	rc4Result := make([]byte, len(tmpBytes))
 
-	rc4obj.XORKeyStream(rc4Result, tmpBytes)
+	rc4obj.XORKeyStream(rc4Result, tmpBytes)*/
+
+	tmpBytes = Rc4Decode(tmpBytes, rc4Key)
 
 	tmpBytes = EncodeUnicodeToUtf8(tmpBytes)
 

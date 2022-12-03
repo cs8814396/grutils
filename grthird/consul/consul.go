@@ -74,6 +74,7 @@ func (this *Consul) GetHealthServices(serviceName string) (chSlice []ConsulHealt
 					err = fmt.Errorf("err: %s, encrypt data: %s", err, metaConfig)
 					return
 				}
+				//log.Println(string(decryptBytes))
 
 				err = json.Unmarshal(decryptBytes, &ch.Service.Meta)
 				if err != nil {
