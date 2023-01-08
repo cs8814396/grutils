@@ -27,7 +27,7 @@ func Test_Consul(t *testing.T) {
 	arb.AesIv = []byte(config.GlobalConf.Aes.AesIV)
 	arb.Rc4Key = []byte(config.GlobalConf.Rc4.Rc4Key)
 
-	encryptData, err := arb.Encrypt([]byte(`{"username": "admin", "password": "Dor9632a32..."}`))
+	encryptData, err := arb.Encrypt([]byte(`{"username": "admin", "password": "xxx"}`))
 	if err != nil {
 		t.Fatalf("encrypt err: %s", err.Error())
 	}

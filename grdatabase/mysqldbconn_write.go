@@ -2,6 +2,7 @@ package grdatabase
 
 import (
 	sqllib "database/sql"
+	"encoding/json"
 	"fmt"
 	"reflect"
 	"strings"
@@ -45,10 +46,15 @@ func InterfaceToSqlParam(dataStruct interface{}) (valueList []interface{}, field
 		kind := field.Type.Kind()
 		var data interface{}
 		switch kind {
-		case reflect.Struct, reflect.Slice:
+		case reflect.Struct, reflect.Slice, reflect.Map:
 			//newL = SetLoggerWithStructFields(ctx, l, reflectValue.Interface())
-			panic("not support")
-			break
+			var dataBytes []byte
+			dataBytes, err = json.Marshal(reflectValue.Interface())
+			if err != nil {
+				err = fmt.Errorf("struct slice not support. err: %s", err)
+				return
+			}
+			data = string(dataBytes)
 
 		case reflect.String:
 			data = reflectValue.String()
@@ -78,7 +84,7 @@ const (
 	WRITE_NUM = 2000
 )
 
-func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (rowsMap []map[string]string, err error) {
+func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (err error) {
 	valueList, fieldNameList, err := InterfaceToSqlParam(dataStruct)
 	if err != nil {
 		return
@@ -95,9 +101,15 @@ func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (rowsMap []map[
 	}
 	t.writerLock.Lock()
 	t.cacheWriteList = append(t.cacheWriteList, valueList)
+
 	t.writerLock.Unlock()
 
-	if force || len(t.cacheWriteList) > WRITE_NUM {
+	writeNum := 3000
+	if t.WriteNumPerTime != 0 {
+		writeNum = t.WriteNumPerTime
+	}
+
+	if force || len(t.cacheWriteList) > writeNum {
 		err = t.Flush()
 		if err != nil {
 			return

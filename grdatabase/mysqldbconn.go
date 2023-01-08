@@ -69,6 +69,7 @@ type TableConn struct {
 	WriteOnDuplicateFieldList []string
 	TotalWriteNum             int64
 	TotalAffectedNum          int64
+	WriteNumPerTime           int
 }
 
 type QueryReq struct {
