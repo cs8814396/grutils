@@ -202,7 +202,7 @@ func (t *TableConn) Flush() (err error) {
 				break
 			}
 
-			log.Printf("insert error: %s. tryTimes: %d", err.Error(), tryTimes)
+			log.Printf("insert tableName: %s error: %s. tryTimes: %d", t.TableName, err.Error(), tryTimes)
 			lowerErrMsg := strings.ToLower(err.Error())
 			if strings.Contains(lowerErrMsg, "try restarting transaction") ||
 				strings.Contains(lowerErrMsg, "lost connection") ||
