@@ -25,6 +25,7 @@ func InterfaceToSqlParam(dataStruct interface{}) (valueList []interface{}, field
 	numFields := st.NumField()
 	for i := 0; i < numFields; i++ {
 		field := st.Field(i)
+
 		fieldName := field.Name
 		tag, ok := field.Tag.Lookup("json")
 		if ok {
@@ -95,7 +96,7 @@ func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (err error) {
 	}
 	for i, f := range fields {
 		if f.Name != fieldNameList[i] {
-			err = fmt.Errorf("fields are not equal. fields: %+v fieldsnamelist: %v i: %d", fields, fieldNameList, i)
+			err = fmt.Errorf("fields are not equal. fields: %+v fieldsnamelist: %v i: %d f.Name: %s fieldNameList[i]: %s", fields, fieldNameList, i, f.Name, fieldNameList[i])
 			return
 		}
 	}
