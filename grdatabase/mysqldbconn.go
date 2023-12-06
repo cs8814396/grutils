@@ -83,6 +83,23 @@ type QueryReq struct {
 	SelectFields []string
 }
 
+func (t *TableConn) Count() (c int64, err error) {
+	sql := "select count(*) from `" + t.TableName + "`"
+	rows, err := t.Query(sql)
+	if err != nil {
+		err = fmt.Errorf("query fail. err: %s sql: %s", err.Error(), sql)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&c)
+		if err != nil {
+			return
+		}
+	}
+	return
+}
+
 // 可能会重复读，但是不会少读。
 func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string, err error) {
 	err = t.DB.Ping()
@@ -265,11 +282,7 @@ func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, e
 }
 
 /*
-
 try:
-
-
-
 
 	# print(sql, args_list)
 	rows = None
@@ -296,7 +309,9 @@ try:
 	# echomsg(msg, False)
 
 	return rows, rows_length
+
 except Exception as e:
+
 	raise Exception("sql execute error: " + sql)
 */
 type Fields []*Field
