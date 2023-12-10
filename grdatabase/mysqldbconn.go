@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/gdgrc/grutils/grcommon"
 
@@ -98,10 +99,19 @@ func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string,
 	if err != nil {
 		return
 	}
-
-	rowsMap, err = t.QueryToMap(sql, args, false)
-	if err != nil {
-		return
+	tryTimes := 5
+	for {
+		rowsMap, err = t.QueryToMap(sql, args, false)
+		if err != nil {
+			log.Printf("QueryToMap sql: %s err: %s", sql, err)
+			tryTimes = tryTimes - 1
+		} else {
+			break
+		}
+		time.Sleep(1000)
+		if tryTimes < 0 {
+			return
+		}
 	}
 
 	//log.Printf("ReadNext.Sql: %s,args: %+v length: %d\n", sql, args, len(rowsMap))
