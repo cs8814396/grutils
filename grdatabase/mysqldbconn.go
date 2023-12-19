@@ -83,6 +83,40 @@ type QueryReq struct {
 	SelectFields []string
 }
 
+func (t *TableConn) ReadTableComment() (comment string, err error) {
+	di, err := t.TableDefinition()
+	if err != nil {
+		return
+	}
+	keyWord := "COMMENT="
+	if strings.Contains(di, keyWord) {
+
+		comment = strings.SplitN(strings.SplitN(di, keyWord, 2)[1], "'", 2)[1]
+
+	}
+	return
+}
+
+func (t *TableConn) TableDefinition() (definition string, err error) {
+
+	sql := "SHOW CREATE TABLE `" + t.TableName + "`"
+	rows, err := t.Query(sql)
+	if err != nil {
+		err = fmt.Errorf("query fail. err: %s sql: %s", err.Error(), sql)
+		return
+	}
+	defer rows.Close()
+	for rows.Next() {
+		err = rows.Scan(&definition)
+		if err != nil {
+			return
+		}
+	}
+
+	definition = strings.ToUpper(definition)
+	return
+}
+
 func (t *TableConn) Count() (c int64, err error) {
 	sql := "select count(*) from `" + t.TableName + "`"
 	rows, err := t.Query(sql)
