@@ -91,7 +91,7 @@ func (t *TableConn) ReadTableComment() (comment string, err error) {
 	keyWord := "COMMENT="
 	if strings.Contains(di, keyWord) {
 
-		comment = strings.SplitN(strings.SplitN(di, keyWord, 2)[1], "'", 2)[1]
+		comment = strings.SplitN(strings.SplitN(di, keyWord, 2)[1], "'", 3)[1]
 
 	}
 	return
@@ -107,7 +107,8 @@ func (t *TableConn) TableDefinition() (definition string, err error) {
 	}
 	defer rows.Close()
 	for rows.Next() {
-		err = rows.Scan(&definition)
+		var tn string
+		err = rows.Scan(&tn, &definition)
 		if err != nil {
 			return
 		}
