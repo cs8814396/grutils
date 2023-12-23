@@ -14,10 +14,16 @@ func CheckStringIfFormatCell(cell string) bool {
 	if err != nil {
 		return false
 	}
+
+	find := false
 	for _, c := range cellCodeList {
-		if c != cell[0:2] {
-			return false
+		if c == cell[0:2] {
+			find = true
+			break
 		}
+	}
+	if !find {
+		return false
 	}
 
 	return result
