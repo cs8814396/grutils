@@ -3,6 +3,7 @@ package consul
 import (
 	"encoding/json"
 	"fmt"
+	"log"
 
 	"github.com/gdgrc/grutils/grmath"
 	"github.com/gdgrc/grutils/grnetwork"
@@ -74,7 +75,7 @@ func (this *Consul) GetHealthServices(serviceName string) (chSlice []ConsulHealt
 					err = fmt.Errorf("err: %s, encrypt data: %s", err, metaConfig)
 					return
 				}
-				//log.Println(string(decryptBytes))
+				log.Printf("decrypt. ch: %+v b: %s", ch, string(decryptBytes))
 
 				err = json.Unmarshal(decryptBytes, &ch.Service.Meta)
 				if err != nil {

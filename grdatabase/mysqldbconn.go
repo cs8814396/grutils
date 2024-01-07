@@ -358,6 +358,18 @@ func (fs Fields) Fmt() string {
 	}
 	return s
 }
+func (fs Fields) FindColumnWithName(name string) (index int, f *Field, ok bool) {
+	ok = false
+	for i, v := range fs {
+		if v.Name == name {
+			ok = true
+			index = i
+			f = v
+			return
+		}
+	}
+	return
+}
 func (fs Fields) FindColumnName(name string) (ok bool) {
 	ok = false
 	for _, v := range fs {
