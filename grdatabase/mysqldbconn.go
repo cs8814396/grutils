@@ -96,8 +96,7 @@ func (t *TableConn) ReadTableComment() (comment string, err error) {
 	}
 	return
 }
-
-func (t *TableConn) TableDefinition() (definition string, err error) {
+func (t *TableConn) TableRawDefinition() (definition string, err error) {
 
 	sql := "SHOW CREATE TABLE `" + t.TableName + "`"
 	rows, err := t.Query(sql)
@@ -114,7 +113,16 @@ func (t *TableConn) TableDefinition() (definition string, err error) {
 		}
 	}
 
-	definition = strings.ToUpper(definition)
+	return
+}
+
+func (t *TableConn) TableDefinition() (definition string, err error) {
+
+	di, err := t.TableRawDefinition()
+	if err != nil {
+		return
+	}
+	definition = strings.ToUpper(di)
 	return
 }
 
