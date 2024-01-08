@@ -11,73 +11,82 @@ import (
 	"log"
 )
 
-func InterfaceToSqlParam(dataStruct interface{}) (valueList []interface{}, fieldNameList []string, err error) {
+func InterfaceToSqlParam(dataStruct interface{}, fields Fields) (valueList []interface{}, fieldNameList []string, err error) {
 	sv := reflect.ValueOf(dataStruct)
 	st := reflect.TypeOf(dataStruct)
-	if sv.Type().Kind() == reflect.Ptr {
+	if st.Kind() == reflect.Ptr {
 		sv = sv.Elem()
 		st = st.Elem()
 	}
-	if sv.Type().Kind() != reflect.Struct {
-		err = fmt.Errorf("dataStruct must be a struct")
-		return
-	}
-	numFields := st.NumField()
-	for i := 0; i < numFields; i++ {
-		field := st.Field(i)
 
-		fieldName := field.Name
-		tag, ok := field.Tag.Lookup("json")
-		if ok {
-			ss := strings.SplitN(tag, ",", 2)
-			if len(ss) > 0 {
-				fieldName = ss[0]
-			}
-			if fieldName == "-" {
-				continue
-			}
-		}
-		if !ok {
-			err = fmt.Errorf("no tag. field: %s", fieldName)
-			return
-		}
-		fieldNameList = append(fieldNameList, fieldName)
-		reflectValue := sv.Field(i)
+	switch st.Kind() {
+	case reflect.Map:
 
-		kind := field.Type.Kind()
-		var data interface{}
-		switch kind {
-		case reflect.Struct, reflect.Slice, reflect.Map:
-			//newL = SetLoggerWithStructFields(ctx, l, reflectValue.Interface())
-			var dataBytes []byte
-			dataBytes, err = json.Marshal(reflectValue.Interface())
-			if err != nil {
-				err = fmt.Errorf("struct slice not support. err: %s", err)
+		for _, f := range fields {
+			fieldNameList = append(fieldNameList, f.Name)
+			valueList = append(valueList, sv.MapIndex(reflect.ValueOf(f.Name)).Interface())
+		}
+
+	case reflect.Struct:
+		numFields := st.NumField()
+		for i := 0; i < numFields; i++ {
+			field := st.Field(i)
+
+			fieldName := field.Name
+			tag, ok := field.Tag.Lookup("json")
+			if ok {
+				ss := strings.SplitN(tag, ",", 2)
+				if len(ss) > 0 {
+					fieldName = ss[0]
+				}
+				if fieldName == "-" {
+					continue
+				}
+			}
+			if !ok {
+				err = fmt.Errorf("no tag. field: %s", fieldName)
 				return
 			}
-			data = string(dataBytes)
+			fieldNameList = append(fieldNameList, fieldName)
+			reflectValue := sv.Field(i)
 
-		case reflect.String:
-			data = reflectValue.String()
-		case reflect.Float32, reflect.Float64:
-			data = reflectValue.Float()
-		case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
-			data = reflectValue.Int()
-		case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
-			data = reflectValue.Uint()
+			kind := field.Type.Kind()
+			var data interface{}
+			switch kind {
+			case reflect.Struct, reflect.Slice, reflect.Map:
+				//newL = SetLoggerWithStructFields(ctx, l, reflectValue.Interface())
+				var dataBytes []byte
+				dataBytes, err = json.Marshal(reflectValue.Interface())
+				if err != nil {
+					err = fmt.Errorf("struct slice not support. err: %s", err)
+					return
+				}
+				data = string(dataBytes)
 
-		default:
-			data = reflectValue.String()
+			case reflect.String:
+				data = reflectValue.String()
+			case reflect.Float32, reflect.Float64:
+				data = reflectValue.Float()
+			case reflect.Int, reflect.Int8, reflect.Int16, reflect.Int32, reflect.Int64:
+				data = reflectValue.Int()
+			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
+				data = reflectValue.Uint()
+
+			default:
+				data = reflectValue.String()
+			}
+
+			valueList = append(valueList, data)
+
 		}
 
-		valueList = append(valueList, data)
-
+		return
+	default:
+		err = fmt.Errorf("dataStruct must be a struct or map")
+		return
 	}
 
-	//sql = fmt.Sprintf("INSERT INTO `%s` ",tableName)
-
 	return
-	//logger.Debugf("SetLoggerWithSt
 
 }
 
@@ -86,23 +95,25 @@ const (
 )
 
 func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (err error) {
-	valueList, fieldNameList, err := InterfaceToSqlParam(dataStruct)
-	if err != nil {
-		return
-	}
 	fields, err := t.GetFields()
 	if err != nil {
 		return
 	}
+	valueList, fieldNameList, err := InterfaceToSqlParam(dataStruct, fields)
+	if err != nil {
+		return
+	}
+
 	for i, f := range fields {
 		if f.Name != fieldNameList[i] {
 			err = fmt.Errorf("fields are not equal. fields: %+v fieldsnamelist: %v i: %d f.Name: %s fieldNameList[i]: %s", fields, fieldNameList, i, f.Name, fieldNameList[i])
 			return
 		}
 	}
+
+	//beforeLength := len(t.cacheWriteList)
 	t.writerLock.Lock()
 	t.cacheWriteList = append(t.cacheWriteList, valueList)
-
 	t.writerLock.Unlock()
 
 	writeNum := 3000
@@ -110,7 +121,9 @@ func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (err error) {
 		writeNum = t.WriteNumPerTime
 	}
 
-	if force || len(t.cacheWriteList) > writeNum {
+	//log.Printf("writeNum: %d len(t.cacheWriteList): %d valueList: %+v beforeLength: %d", writeNum, len(t.cacheWriteList), valueList, beforeLength)
+
+	if force || len(t.cacheWriteList) >= writeNum {
 		err = t.Flush()
 		if err != nil {
 			return
