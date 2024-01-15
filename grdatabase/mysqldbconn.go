@@ -73,6 +73,7 @@ type TableConn struct {
 	WriteNumPerTime           int
 
 	NoBackQuote bool
+	NoPrepare   bool
 }
 
 type QueryReq struct {
@@ -81,8 +82,8 @@ type QueryReq struct {
 	BeginIdIndex     interface{}
 	BeginIdIndexName string
 	ExtraSql         string
-
-	SelectFields []string
+	GroupBy          string
+	SelectFields     []string
 }
 
 func (t *TableConn) ReadTableComment() (comment string, err error) {
@@ -303,8 +304,12 @@ func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, e
 
 			if q.BeginIdIndex != nil {
 				// 有可能读重复
-				sql += fmt.Sprintf(" WHERE `%s` >= ? ", q.BeginIdIndexName)
-				args = append(args, q.BeginIdIndex)
+				if t.NoPrepare {
+					sql += fmt.Sprintf(" WHERE `%s` >= '%s' ", q.BeginIdIndexName, q.BeginIdIndex)
+				} else {
+					sql += fmt.Sprintf(" WHERE `%s` >= ? ", q.BeginIdIndexName)
+					args = append(args, q.BeginIdIndex)
+				}
 
 			}
 			order = " order by " + q.BeginIdIndexName
@@ -317,6 +322,10 @@ func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, e
 				sql += ("WHERE " + q.ExtraSql)
 			}
 		}
+		if q.GroupBy != "" {
+			sql += (" group by " + q.GroupBy + " ")
+		}
+
 		sql += order
 		// limit begin
 		if q.ReadLineNum > 0 {
