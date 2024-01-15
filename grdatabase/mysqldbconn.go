@@ -71,6 +71,8 @@ type TableConn struct {
 	TotalWriteNum             int64
 	TotalAffectedNum          int64
 	WriteNumPerTime           int
+
+	NoBackQuote bool
 }
 
 type QueryReq struct {
@@ -264,7 +266,11 @@ func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, e
 	if q != nil && len(q.SelectFields) > 0 {
 
 		for _, field := range q.SelectFields {
-			sql += fmt.Sprintf("`%s`,", field)
+			if t.NoBackQuote {
+				sql += fmt.Sprintf("%s,", field)
+			} else {
+				sql += fmt.Sprintf("`%s`,", field)
+			}
 		}
 		lengthSql := len(sql)
 		sql = sql[:lengthSql-1]
@@ -276,7 +282,11 @@ func (t *TableConn) GetSelectSql(q *QueryReq) (sql string, args []interface{}, e
 		}
 
 		for _, field := range fields {
-			sql += fmt.Sprintf("`%s`,", field.Name)
+			if t.NoBackQuote {
+				sql += fmt.Sprintf("%s,", field.Name)
+			} else {
+				sql += fmt.Sprintf("`%s`,", field.Name)
+			}
 		}
 		lengthSql := len(sql)
 		sql = sql[:lengthSql-1]
