@@ -11,17 +11,31 @@ import (
 	"time"
 
 	"github.com/gdgrc/grutils/grcommon"
+	"gorm.io/gorm"
 
 	_ "github.com/go-sql-driver/mysql"
 )
 
 func NewDatabaseConn(s *sql.DB) *DatabaseConn {
-	databaseConn := &DatabaseConn{s}
+	databaseConn := &DatabaseConn{}
+	databaseConn.DB = s
 	return databaseConn
+}
+
+func NewDatabaseConnWithGorm(s *gorm.DB) (*DatabaseConn, error) {
+	databaseConn := &DatabaseConn{}
+	db, err := s.DB()
+	if err != nil {
+		return nil, err
+	}
+	databaseConn.DB = db
+	databaseConn.Gormdb = s
+	return databaseConn, nil
 }
 
 type DatabaseConn struct {
 	*sql.DB
+	Gormdb *gorm.DB
 }
 
 func (d *DatabaseConn) GetTableList() (tableList []string, err error) {
@@ -50,6 +64,7 @@ func (d *DatabaseConn) GetTableList() (tableList []string, err error) {
 func (d *DatabaseConn) NewTableConn(tableName string) *TableConn {
 	var tc TableConn
 	tc.DB = d.DB
+	tc.Gormdb = d.Gormdb
 	tc.TableName = tableName
 
 	return &tc
@@ -57,6 +72,7 @@ func (d *DatabaseConn) NewTableConn(tableName string) *TableConn {
 
 type TableConn struct {
 	DatabaseConn
+
 	TableName         string
 	Fields            []*Field
 	IsTurnColumnUpper bool
@@ -74,6 +90,7 @@ type TableConn struct {
 
 	NoBackQuote bool
 	NoPrepare   bool
+	IsDoris     bool
 }
 
 type QueryReq struct {
@@ -84,6 +101,27 @@ type QueryReq struct {
 	ExtraSql         string
 	GroupBy          string
 	SelectFields     []string
+}
+
+func (qr *QueryReq) RawSetAfterQuery(lastBeginIdIndex interface{}) {
+	if qr.BeginIdIndexName != "" {
+		newBeginIdIndex := lastBeginIdIndex //rowsMap[len(rowsMap)-1][t.LastQueryReq.BeginIdIndexName]
+		if qr.BeginIdIndex == nil {
+			// 没有开始id, 理论上同最后一个情况。至少跳过一行
+			qr.BeginIndex = 1
+		} else if newBeginIdIndex == qr.BeginIdIndex {
+			// 假如最后一行的id值 和 查询条件开始的id值相同，证明这次的查询结果所有的 id值都是相同的，所以需要跳过这个查询部分，否则就会死循环
+			qr.BeginIndex = qr.BeginIndex + qr.ReadLineNum
+		} else {
+			// 除去上面两种情况，读到了不同于查询起始条件的值，又因为读到过，所以下次开始的时候至少跳过一行。 (的确可能重复读)
+			// newBeginIdIndex!= t.LastQueryReq.BeginIdIndex
+			qr.BeginIndex = 1
+		}
+		qr.BeginIdIndex = newBeginIdIndex
+
+	} else {
+		qr.BeginIndex = qr.BeginIndex + qr.ReadLineNum
+	}
 }
 
 func (t *TableConn) ReadTableComment() (comment string, err error) {
@@ -147,6 +185,40 @@ func (t *TableConn) Count() (c int64, err error) {
 }
 
 // 可能会重复读，但是不会少读。
+func (t *TableConn) ReadNextDataToInterface(q *QueryReq, targetData interface{}) (err error) {
+	err = t.DB.Ping()
+	if err != nil {
+		return
+	}
+	if q != nil {
+		t.LastQueryReq = q
+	}
+	if t.LastQueryReq == nil {
+		t.LastQueryReq = &QueryReq{ReadLineNum: 100000}
+	}
+	sql, args, err := t.GetSelectSql(t.LastQueryReq)
+	if err != nil {
+		return
+	}
+	tryTimes := 5
+	for {
+		err = t.QueryToInterface(sql, args, false, targetData)
+		if err != nil {
+			log.Printf("QueryToMap sql: %s err: %s", sql, err)
+			tryTimes = tryTimes - 1
+		} else {
+			break
+		}
+		time.Sleep(1000)
+		if tryTimes < 0 {
+			return
+		}
+	}
+
+	return
+}
+
+// 可能会重复读，但是不会少读。
 func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string, err error) {
 	err = t.DB.Ping()
 	if err != nil {
@@ -205,12 +277,38 @@ func (t *TableConn) ReadNextDataToMap(q *QueryReq) (rowsMap []map[string]string,
 	return
 }
 
-func (t *TableConn) QueryToMap(querySql string, params []interface{}, isPure bool) (retSlice []map[string]string, err error) {
-	tablRows, err := t.Query(querySql, params...)
+func (t *TableConn) QueryToInterface(querySql string, params []interface{}, isPure bool, targetData interface{}) (err error) {
+
+	qs := t.DatabaseConn.Gormdb.Dialector.Explain(querySql, params...)
+
+	err = t.DatabaseConn.Gormdb.Raw(qs, targetData).Find(targetData).Error
 	if err != nil {
+		err = fmt.Errorf("CreateInBatches fail. err: %s", err.Error())
 		return
 	}
-	defer tablRows.Close()
+	//log.Printf("querySql: %s  err: %+v", qs, err)
+	return
+}
+
+func (t *TableConn) QueryToMap(querySql string, params []interface{}, isPure bool) (retSlice []map[string]string, err error) {
+	var tablRows *sql.Rows
+	if t.IsDoris {
+		querySql := gorm.DB{}.Dialector.Explain(querySql, params...)
+
+		tablRows, err = t.Query(querySql)
+		if err != nil {
+			err = fmt.Errorf("CreateInBatches fail. err: %s", err.Error())
+			return
+		}
+		defer tablRows.Close()
+	} else {
+
+		tablRows, err = t.Query(querySql, params...)
+		if err != nil {
+			return
+		}
+		defer tablRows.Close()
+	}
 
 	columns, err := tablRows.Columns()
 	if err != nil {
