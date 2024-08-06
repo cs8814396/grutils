@@ -21,10 +21,31 @@ func InterfaceToSqlParam(dataStruct interface{}, fields Fields) (valueList []int
 
 	switch st.Kind() {
 	case reflect.Map:
-
+		/*
+			CREATE TABLE `CHINA_KUAISHOU_3Y1` (
+				`Id` int(11) NOT NULL AUTO_INCREMENT,
+				`ANAME` varchar(128) DEFAULT NULL,
+				`cell` varchar(128) DEFAULT NULL,
+				`ADDRESS` varchar(255) DEFAULT NULL,
+				`GOODS` varchar(255) DEFAULT NULL,
+				`AMOUNT` varchar(255) DEFAULT NULL,
+				`STIME` varchar(64) DEFAULT NULL,
+				PRIMARY KEY (`Id`),
+				KEY `IDX_GOODS` (`GOODS`(6))
+			) ENGINE=InnoDB AUTO_INCREMENT=51777837 DEFAULT CHARSET=utf8mb4
+			2024/03/05 15:48:05 value: 28099 f.name: Id type: string
+			2024/03/05 15:48:05 value: <invalid reflect.Value> f.name: NAME type: invalid
+		*/
 		for _, f := range fields {
 			fieldNameList = append(fieldNameList, f.Name)
-			valueList = append(valueList, sv.MapIndex(reflect.ValueOf(f.Name)).Interface())
+			value := sv.MapIndex(reflect.ValueOf(f.Name))
+			//log.Printf("value: %+v f.name: %+v type: %+v datasturct: %+v field: %s", value, f.Name, value.Kind(), dataStruct, fields.Fmt())
+			targetValue := value.Interface()
+			/*	if value.IsNil() {
+				data := ""
+				targetValue = reflect.ValueOf(data)
+			}*/
+			valueList = append(valueList, targetValue)
 		}
 
 	case reflect.Struct:

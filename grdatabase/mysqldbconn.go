@@ -520,19 +520,20 @@ func (t *TableConn) GetFields() (fields Fields, err error) {
 		if err0 != nil {
 			err = err0
 			return
-
 		}
+		//log.Println("getfields sql: %s", rawFuncDescSql)
 		fields = make([]*Field, 0)
 		for rows.Next() {
 			var IsNull string
 			var t2, t3, t4 interface{}
 
 			var field = Field{}
+
 			err = rows.Scan(&field.Name, &field.Type, &IsNull, &t2, &t3, &t4)
 			if err != nil {
-
 				return
 			}
+
 			if IsNull == "YES" {
 				field.IsNull = true
 			}
@@ -541,7 +542,7 @@ func (t *TableConn) GetFields() (fields Fields, err error) {
 			}
 			field.Type = strings.ToUpper(field.Type)
 			fields = append(fields, &field)
-
+			//log.Printf("getfields desc name: %s isnull: %v type: %s", field.Name, IsNull, field.Type)
 		}
 		t.Fields = fields
 	}
