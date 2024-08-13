@@ -115,7 +115,7 @@ const (
 	WRITE_NUM = 2000
 )
 
-func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (err error) {
+func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (result bool, err error) {
 	fields, err := t.GetFields()
 	if err != nil {
 		return
@@ -145,6 +145,7 @@ func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (err error) {
 	//log.Printf("writeNum: %d len(t.cacheWriteList): %d valueList: %+v beforeLength: %d", writeNum, len(t.cacheWriteList), valueList, beforeLength)
 
 	if force || len(t.cacheWriteList) >= writeNum {
+		result = true
 		err = t.Flush()
 		if err != nil {
 			return
