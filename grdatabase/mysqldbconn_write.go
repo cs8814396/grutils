@@ -4,6 +4,7 @@ import (
 	sqllib "database/sql"
 	"encoding/json"
 	"fmt"
+	"math/rand"
 	"reflect"
 	"strings"
 	"time"
@@ -92,7 +93,6 @@ func InterfaceToSqlParam(dataStruct interface{}, fields Fields) (valueList []int
 				data = reflectValue.Int()
 			case reflect.Uint, reflect.Uint8, reflect.Uint16, reflect.Uint32, reflect.Uint64:
 				data = reflectValue.Uint()
-
 			default:
 				data = reflectValue.String()
 			}
@@ -241,9 +241,10 @@ func (t *TableConn) Flush() (err error) {
 			lowerErrMsg := strings.ToLower(err.Error())
 			if strings.Contains(lowerErrMsg, "try restarting transaction") ||
 				strings.Contains(lowerErrMsg, "lost connection") ||
-				strings.Contains(lowerErrMsg, "has gone away") {
+				strings.Contains(lowerErrMsg, "has gone away") ||
+				strings.Contains(lowerErrMsg, "invalid connection") {
 				log.Printf("writeRows retry Exception: %s,tryTimes: %d", lowerErrMsg, tryTimes)
-				time.Sleep(time.Second * 2)
+				time.Sleep(time.Second * time.Duration(rand.Intn(10)+2))
 				if tryTimes > 0 {
 					tryTimes = tryTimes - 1
 				} else {
