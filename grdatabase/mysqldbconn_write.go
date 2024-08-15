@@ -153,6 +153,11 @@ func (t *TableConn) WriteRow(dataStruct interface{}, force bool) (result bool, e
 	}
 	return
 }
+func (t *TableConn) GetDataNum() (length int) {
+	t.writerLock.Lock()
+	defer t.writerLock.Unlock()
+	return len(t.cacheWriteList)
+}
 func (t *TableConn) Flush() (err error) {
 	t.writerLock.Lock()
 	defer t.writerLock.Unlock()
