@@ -86,6 +86,7 @@ type TableConn struct {
 	WriteOnDuplicateFieldList []string
 	TotalWriteNum             int64
 	TotalAffectedNum          int64
+	TotalCost                 time.Duration
 	WriteNumPerTime           int
 
 	NoBackQuote bool

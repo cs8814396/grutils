@@ -198,7 +198,7 @@ func (t *TableConn) Flush() (err error) {
 		var rowsAffected int64
 		for {
 
-			rowsAffected, err = func() (rowsAffected int64, innerErr error) {
+			rowsAffected, err = func() (tmpRowsAffected int64, innerErr error) {
 				tx, innerErr := t.DB.Begin()
 				if innerErr != nil {
 					return
@@ -218,15 +218,19 @@ func (t *TableConn) Flush() (err error) {
 					return
 				}
 
-				rowsAffected = 0
+				tmpRowsAffected = 0
 				for _, valueList := range t.cacheWriteList {
 					var insertResult sqllib.Result
 					insertResult, innerErr = stmt.Exec(valueList...)
 					if innerErr != nil {
 						return
 					}
-					insertResult.RowsAffected()
-					rowsAffected = rowsAffected + 1
+					var ef int64
+					ef, innerErr = insertResult.RowsAffected()
+					if err != nil {
+						return
+					}
+					tmpRowsAffected = tmpRowsAffected + ef
 				}
 				innerErr = tx.Commit()
 				if innerErr != nil {
@@ -266,8 +270,10 @@ func (t *TableConn) Flush() (err error) {
 		cost := time.Since(start)
 		t.TotalWriteNum += cacheDataLength
 		t.TotalAffectedNum += rowsAffected
+		t.TotalCost = t.TotalCost + cost
 
-		log.Printf("Finishing inserting Table: %s data num: %d. timecost: %s", t.TableName, cacheDataLength, cost.String())
+		log.Printf("Finishing inserting Table: %s data num: %d. affected: %d timecost: %s. Total: WriteNum: %d Affected: %d Cost: %s",
+			t.TableName, cacheDataLength, rowsAffected, cost.String(), t.TotalWriteNum, t.TotalAffectedNum, t.TotalCost.String())
 		t.cacheWriteList = t.cacheWriteList[0:0]
 	}
 	return
