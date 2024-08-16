@@ -280,6 +280,17 @@ func (t *TableConn) Flush() (err error) {
 		log.Printf("Finishing inserting Table: %s data num: %d. affected: %d timecost: %s. Total: WriteNum: %d Affected: %d Cost: %s",
 			t.TableName, cacheDataLength, rowsAffected, cost.String(), t.TotalWriteNum, t.TotalAffectedNum, t.TotalCost.String())
 		t.cacheWriteList = t.cacheWriteList[0:0]
+
+		if t.SleepNum > 0 && t.SleepTime > 0 {
+			if t.TotalWriteNum >= (t.TotalReachDataNumTimes+1)*t.SleepNum {
+				//每入库40w休息n秒
+				log.Printf("Sleep %d After Insert %d", t.SleepTime, t.SleepNum)
+				time.Sleep(time.Duration(t.SleepTime) * time.Second)
+				t.TotalReachDataNumTimes = t.TotalReachDataNumTimes + 1
+
+			}
+		}
+
 	}
 	return
 }

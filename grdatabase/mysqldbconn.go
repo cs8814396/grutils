@@ -87,11 +87,16 @@ type TableConn struct {
 	TotalWriteNum             int64
 	TotalAffectedNum          int64
 	TotalCost                 time.Duration
-	WriteNumPerTime           int
+	TotalReachDataNumTimes    int64
+
+	WriteNumPerTime int
 
 	NoBackQuote bool
 	NoPrepare   bool
 	IsDoris     bool
+
+	SleepNum  int64
+	SleepTime int64
 }
 
 type QueryReq struct {
