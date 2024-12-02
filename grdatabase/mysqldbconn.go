@@ -84,6 +84,7 @@ type TableConn struct {
 	writeSql                  string
 	ignore                    bool
 	WriteOnDuplicateFieldList []string
+	DuplicateTemplateString   string
 	TotalWriteNum             int64
 	TotalAffectedNum          int64
 	TotalCost                 time.Duration
@@ -334,7 +335,6 @@ func (t *TableConn) QueryToMap(querySql string, params []interface{}, isPure boo
 	for tablRows.Next() {
 		err = tablRows.Scan(scanArgs...)
 		if err != nil {
-
 			return
 		}
 

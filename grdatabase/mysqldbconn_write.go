@@ -77,13 +77,23 @@ func InterfaceToSqlParam(dataStruct interface{}, fields Fields) (valueList []int
 			switch kind {
 			case reflect.Struct, reflect.Slice, reflect.Map:
 				//newL = SetLoggerWithStructFields(ctx, l, reflectValue.Interface())
-				var dataBytes []byte
-				dataBytes, err = json.Marshal(reflectValue.Interface())
-				if err != nil {
-					err = fmt.Errorf("struct slice not support. err: %s", err)
-					return
+				if reflect.TypeOf(time.Time{}) == field.Type {
+					var t time.Time
+					t, ok = reflectValue.Interface().(time.Time)
+					if !ok {
+						err = fmt.Errorf("TYPE OF IS time.Time but can not convert")
+						return
+					}
+					data = t.Format("2006-01-02 15:04:05")
+				} else {
+					var dataBytes []byte
+					dataBytes, err = json.Marshal(reflectValue.Interface())
+					if err != nil {
+						err = fmt.Errorf("struct slice not support. err: %s", err)
+						return
+					}
+					data = string(dataBytes)
 				}
-				data = string(dataBytes)
 
 			case reflect.String:
 				data = reflectValue.String()
@@ -194,6 +204,8 @@ func (t *TableConn) Flush() (err error) {
 					}
 					duplicateString += fmt.Sprintf("`%s`=VALUES(`%s`)", f, f)
 				}
+			} else if t.DuplicateTemplateString != "" {
+				duplicateString = t.DuplicateTemplateString
 			}
 			sql = sql + duplicateString
 
